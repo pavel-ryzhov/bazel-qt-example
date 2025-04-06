@@ -11,6 +11,7 @@ class MainWidget : public QWidget {
     explicit MainWidget(QWidget* parent = nullptr);
 
     void SetMode(Controller::Mode mode);
+    void Refresh();
 
    private slots:
     void Repaint();

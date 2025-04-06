@@ -9,6 +9,7 @@ constexpr auto kDefaultHeight = 600;
 
 QT_BEGIN_NAMESPACE
 class QComboBox;
+class QPushButton;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
@@ -19,9 +20,11 @@ public:
 
 private slots:
     void ModeChanged(int mode);
+    void RefreshClicked();
 
 private: // NOLINT(readability-redundant-access-specifiers)
     QComboBox* mode_combo_box_;
+    QPushButton* refresh_button_;
     MainWidget* main_widget_;
 };
 

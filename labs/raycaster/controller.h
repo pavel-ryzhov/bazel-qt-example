@@ -1,10 +1,19 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
+#include "ray.h"
 #include "polygon.h"
 
+#include <iostream>
 #include <QObject>
+#include <algorithm>
+#include <iterator>
+#include <ranges>
+#include <utility>
 #include <vector>
+
+constexpr auto kRotateAngle = 1e-4;
+constexpr auto kNearDiffrence = 1e-3;
 
 class Controller : public QObject {
     Q_OBJECT
@@ -72,6 +81,10 @@ class Controller : public QObject {
         emit Repaint();
     }
 
+    [[nodiscard]] bool HasLightSource() const {
+        return light_source_.toPoint() != QPoint{-1, -1};
+    }
+
     void SetMode(Mode mode) {
         mode_ = mode;
     }
@@ -80,14 +93,79 @@ class Controller : public QObject {
         return mode_;
     }
 
+    [[nodiscard]] std::vector<Ray> CastRays() const {
+        std::vector<Ray> result;
+        for (const auto& polygon : polygons_) {
+            for (const auto& vertex : polygon.GetVertecis()) {
+                const Ray ray{light_source_, vertex};
+                result.push_back(ray);
+                // result.push_back(ray.Rotate(-kRotateAngle));
+                // result.push_back(ray.Rotate(kRotateAngle));
+            }
+        }
+        SortRaysByAngle(&result);
+        return result;
+    }
+
+    void IntersectRays(std::vector<Ray>* rays) const {
+        for (auto& ray : *rays) {
+            Intersection result;
+            for (const auto& polygon : polygons_) {
+                if (const auto intersection = polygon.IntersectRay(ray); intersection && (!result || intersection->second < result->second)) {
+                    result = intersection;
+                }
+            }
+            ray.SetEnd(result->first);
+        }
+    }
+
+    [[nodiscard]] static Polygon CreateLightArea(const std::vector<Ray>& rays) {
+        std::vector<QPointF> result;
+        result.reserve(rays.size());
+        std::ranges::copy((rays | std::ranges::views::transform(&Ray::GetEnd)), std::back_inserter(result));
+        return Polygon(result);
+    }
+
+    static void RemoveAdjacentRays(std::vector<Ray>* rays) {
+        if (rays->size() <= 1) [[unlikely]] {
+            return;
+        }
+        std::vector<Ray> unique_rays{rays->front()};
+        Ray current_unique_ray{rays->front()};
+        for (auto it = rays->begin() + 1; it != rays->end(); ++it) {
+            if (Distance(it->GetEnd(), current_unique_ray.GetEnd()) > kNearDiffrence) {
+                current_unique_ray = *it;
+                unique_rays.push_back(*it);
+            }
+        }
+        if (Distance(unique_rays.front().GetEnd(), unique_rays.back().GetEnd()) < kNearDiffrence) {
+            unique_rays.pop_back();
+        }
+        *rays = std::move(unique_rays);
+    }
+
+    void Refresh(int width, int height) {
+        polygons_.clear();
+        light_source_ = {-1, -1};
+        mode_ = Mode::Polygons;
+        drawing_polygon_ = false;
+        Resize(width, height);
+    }
+
    signals:
     void Repaint();
 
    private:
     std::vector<Polygon> polygons_;
-    QPointF light_source_;
+    QPointF light_source_{-1, -1};
     Mode mode_ = Mode::Polygons;
     bool drawing_polygon_ = false;
+
+    static void SortRaysByAngle(std::vector<Ray>* rays) {
+        std::ranges::sort(*rays, [](const Ray& a, const Ray& b){
+            return a.GetAngle() < b.GetAngle();
+        });
+    }
 };
 
 #endif
