@@ -46,10 +46,11 @@ class Ray {
     Ray(const QPointF& begin, const QPointF& end)
         : begin_(begin)
         , end_(end)
-        , angle_(std::atan((end.y() - begin.y()) / (end.x() - begin.x()))) {
-        if (end.x() - begin.x() < -kEpsilon) {
-            angle_ = NormalizeAngle(angle_ + std::numbers::pi);
-        }
+        , angle_(NormalizeAngle(std::atan2(end.y() - begin.y(), end.x() - begin.x()))) {
+        // , angle_(std::atan((end.y() - begin.y()) / (end.x() - begin.x()))) {
+        // if (end.x() - begin.x() < -kEpsilon) {
+        //     angle_ = NormalizeAngle(angle_ + std::numbers::pi);
+        // }
     }
 
     Ray(const QPointF& begin, double angle, double length)

@@ -10,6 +10,7 @@ qt_cc_library(
         "@rules_qt//:qt_core",
         "@rules_qt//:qt_gui",
         "@rules_qt//:qt_widgets",
+        "@rules_qt//:qt_opengl",
     ],
 )
 
