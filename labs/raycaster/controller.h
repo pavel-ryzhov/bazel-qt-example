@@ -23,7 +23,7 @@ class Controller : public QObject {
     Q_OBJECT
 
    public:
-    enum Mode : uint8_t { Light, Polygons };
+    enum Mode : uint8_t { Light, Polygons, StaticLights };
 
     Controller(int width, int height) {
         Resize(width, height);
@@ -82,7 +82,7 @@ class Controller : public QObject {
 
     void SetLightSource(const QPointF& point) {
         light_source_ = point;
-        // emit Repaint();
+        emit Repaint();
     }
 
     [[nodiscard]] bool HasLightSource() const {
@@ -168,6 +168,7 @@ class Controller : public QObject {
 
     void Refresh(int width, int height) {
         polygons_.clear();
+        static_lights_.clear();
         light_source_ = {-1, -1};
         mode_ = Mode::Polygons;
         drawing_polygon_ = false;
@@ -182,6 +183,7 @@ class Controller : public QObject {
     std::vector<Polygon> polygons_;
     QPointF light_source_{-1, -1};
     Mode mode_ = Mode::Polygons;
+    std::vector<QPointF> static_lights_;
     bool drawing_polygon_ = false;
 
     static void SortRaysByAngle(std::vector<Ray>* rays) {

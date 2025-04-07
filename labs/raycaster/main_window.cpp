@@ -10,7 +10,7 @@ MainWindow::MainWindow(): mode_combo_box_(new QComboBox()), refresh_button_(new 
     setCentralWidget(widget);
     setWindowTitle("RAYCASTER");
 
-    mode_combo_box_->addItems({"Light", "Polygons"});
+    mode_combo_box_->addItems({"Light", "Polygons, Static Lights"});
     mode_combo_box_->setCurrentIndex(Controller::Mode::Polygons);
 
     connect(mode_combo_box_, &QComboBox::currentIndexChanged, this, &MainWindow::ModeChanged);

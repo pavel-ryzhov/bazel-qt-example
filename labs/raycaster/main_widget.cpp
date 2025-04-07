@@ -5,17 +5,16 @@
 
 //NOLINTBEGIN(cppcoreguidelines-owning-memory, *-unused-return-value)
 
-MainWidget::MainWidget(QWidget* parent): QWidget(parent), controller_(width(), height()) {
+MainWidget::MainWidget(QWidget* parent): QOpenGLWidget(parent), controller_(width(), height()) {
     setMouseTracking(true);
     connect(&controller_, &Controller::RepaintStatic, this, &MainWidget::RepaintStatic);
     connect(&controller_, &Controller::Repaint, this, &MainWidget::Repaint);
 
-    timer_.setInterval(16);
-    // timer_.setSingleShot(true);
-    connect(&timer_, &QTimer::timeout, this, [this](){
-        Repaint();
-    });
-    timer_.start();
+    // timer_.setInterval(16);
+    // connect(&timer_, &QTimer::timeout, this, [this](){
+    //     Repaint();
+    // });
+    // timer_.start();
 }
 
 void MainWidget::SetMode(Controller::Mode mode) {
@@ -31,8 +30,6 @@ void MainWidget::paintEvent(QPaintEvent* /*event*/) {
     result_painter.drawPixmap(0, 0, static_background_);
     result_painter.drawPixmap(0, 0, pixmap);
 }
-
-
 
 void MainWidget::mouseMoveEvent(QMouseEvent* event) {
     if (controller_.GetMode() == Controller::Mode::Light) {
@@ -100,13 +97,13 @@ void MainWidget::PaintStatic(QPainter* painter) {
 void MainWidget::Paint(QPainter* painter) {
 
     if (controller_.HasLightSource()) {
-        // const auto timestamp = std::chrono::system_clock::now();
+        const auto timestamp = std::chrono::system_clock::now();
         painter->setRenderHint(QPainter::Antialiasing);
 
         const auto light_area = controller_.CreateLightArea();
         const auto additional_polygons = controller_.CreateAdditionalLightAreas();
 
-        // const auto timestamp1 = std::chrono::system_clock::now();
+        const auto timestamp1 = std::chrono::system_clock::now();
 
         painter->setBrush(Qt::white);
         // painter->setPen(QColor(128, 0, 0, 128));
@@ -124,8 +121,8 @@ void MainWidget::Paint(QPainter* painter) {
             painter->drawPolygon(polygon.GetVertecis().data(), static_cast<int>(polygon.GetVertecis().size()));
         }
 
-        // const auto timestamp2 = std::chrono::system_clock::now();
-        // qDebug() << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp1 - timestamp) << ' ' << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp2 - timestamp);
+        const auto timestamp2 = std::chrono::system_clock::now();
+        qDebug() << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp1 - timestamp) << ' ' << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp2 - timestamp);
         // constexpr auto kAngleStep = 2 * std::numbers::pi / kAdditionalLightSourcesCount;
         // for (size_t i = 0; i < kAdditionalLightSourcesCount; ++i) {
         //     const auto angle = kAngleStep * static_cast<double>(i);

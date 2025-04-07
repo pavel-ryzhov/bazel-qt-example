@@ -3,10 +3,10 @@
 
 #include "controller.h"
 
-#include <QtWidgets>
 #include <QOpenGLWidget>
+#include <QtWidgets>
 
-class MainWidget : public QWidget {
+class MainWidget : public QOpenGLWidget {
     Q_OBJECT
    public:
     explicit MainWidget(QWidget* parent = nullptr);
@@ -24,10 +24,13 @@ class MainWidget : public QWidget {
     void mousePressEvent(QMouseEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
+    // void paintGL() override;
+    // void resizeGL(int w, int h) override;
+
    private:
     Controller controller_;
     QPixmap static_background_;
-    QTimer timer_;
+    // QTimer timer_;
 
     void Paint(QPainter* painter);
     void PaintStatic(QPainter* painter);
