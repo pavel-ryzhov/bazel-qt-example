@@ -54,7 +54,7 @@ void MainWidget::mousePressEvent(QMouseEvent* event) {
 }
 
 void MainWidget::resizeEvent(QResizeEvent* event) {
-    controller_.Resize(event->size().width(), event->size().height());
+    controller_.Resize(event->size().width(), event->size().height(), event->oldSize().width(), event->oldSize().height());
 }
 
 void MainWidget::Refresh() {
@@ -96,14 +96,14 @@ void MainWidget::PaintStatic(QPainter* painter) {
 
 void MainWidget::Paint(QPainter* painter) {
 
-    if (controller_.HasLightSource()) {
-        const auto timestamp = std::chrono::system_clock::now();
+    if (controller_.HasLightSource() && controller_.GetMode() == Controller::Mode::Light) {
+        // const auto timestamp = std::chrono::system_clock::now();
         painter->setRenderHint(QPainter::Antialiasing);
 
         const auto light_area = controller_.CreateLightArea();
         const auto additional_polygons = controller_.CreateAdditionalLightAreas();
 
-        const auto timestamp1 = std::chrono::system_clock::now();
+        // const auto timestamp1 = std::chrono::system_clock::now();
 
         painter->setBrush(Qt::white);
         // painter->setPen(QColor(128, 0, 0, 128));
@@ -121,8 +121,8 @@ void MainWidget::Paint(QPainter* painter) {
             painter->drawPolygon(polygon.GetVertecis().data(), static_cast<int>(polygon.GetVertecis().size()));
         }
 
-        const auto timestamp2 = std::chrono::system_clock::now();
-        qDebug() << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp1 - timestamp) << ' ' << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp2 - timestamp);
+        // const auto timestamp2 = std::chrono::system_clock::now();
+        // qDebug() << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp1 - timestamp) << ' ' << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp2 - timestamp);
         // constexpr auto kAngleStep = 2 * std::numbers::pi / kAdditionalLightSourcesCount;
         // for (size_t i = 0; i < kAdditionalLightSourcesCount; ++i) {
         //     const auto angle = kAngleStep * static_cast<double>(i);

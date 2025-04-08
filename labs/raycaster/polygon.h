@@ -41,6 +41,12 @@ class Polygon {
         }
     }
 
+    void Resize(double x_ratio, double y_ratio) {
+        for (auto& vertex : vertices_) {
+            vertex = {vertex.rx() * x_ratio, vertex.ry() * y_ratio};
+        }
+    }
+
     // std::optional<QPointF> IntersectRay(const Ray& ray) {
     //     std::optional<QPointF> result;
     //     double distance = -1;

@@ -26,7 +26,12 @@ class Controller : public QObject {
     enum Mode : uint8_t { Light, Polygons, StaticLights };
 
     Controller(int width, int height) {
-        Resize(width, height);
+        // Resize(width, height, width, height);
+        Init(width, height);
+    }
+
+    void Init(int width, int height) {
+        polygons_.push_back(Polygon{{QPoint{-10, -10}, QPoint{width + 10, -10}, QPoint{width + 10, height + 10}, QPoint{-10, height + 10}}});
     }
 
     void AddVertex(const QPointF& vertex) {
@@ -43,12 +48,20 @@ class Controller : public QObject {
         drawing_polygon_ = false;
     }
 
-    void Resize(int width, int height) {
-        const Polygon p{{QPoint{0, 0}, QPoint{width - 1, 0}, QPoint{width - 1, height - 1}, QPoint{0, height - 1}}};
+    void Resize(int width, int height, int old_width, int old_height) {
+        const auto x_ratio = static_cast<double>(width) / old_width;
+        const auto y_ratio = static_cast<double>(height) / old_height;
+        const Polygon p{{QPoint{-10, -10}, QPoint{width + 10, -10}, QPoint{width + 10, height + 10}, QPoint{-10, height + 10}}};
         if (polygons_.empty()) {
             polygons_.push_back(p);
         } else {
             polygons_.front() = p;
+        }
+        if (HasLightSource()) {
+            light_source_ = {light_source_.rx() * x_ratio, light_source_.ry() * y_ratio};
+        }
+        for (size_t i = 1; i < polygons_.size(); ++i) {
+            polygons_[i].Resize(x_ratio, y_ratio);
         }
         emit RepaintStatic();
     }
@@ -91,6 +104,7 @@ class Controller : public QObject {
 
     void SetMode(Mode mode) {
         mode_ = mode;
+        emit Repaint();
     }
 
     [[nodiscard]] Mode GetMode() const {
@@ -172,7 +186,9 @@ class Controller : public QObject {
         light_source_ = {-1, -1};
         mode_ = Mode::Polygons;
         drawing_polygon_ = false;
-        Resize(width, height);
+        // Resize(width, height, width, height);
+        Init(width, height);
+        emit RepaintStatic();
     }
 
    signals:
