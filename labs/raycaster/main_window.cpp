@@ -31,6 +31,10 @@ MainWindow::MainWindow(): mode_combo_box_(new QComboBox()), refresh_button_(new 
     resize(kDefaultWidth, kDefaultHeight);
 }
 
+void MainWindow::resizeEvent(QResizeEvent* /*event*/) {
+    main_widget_->Resize();
+}
+
 void MainWindow::ModeChanged(int mode) {
     main_widget_->SetMode(static_cast<Controller::Mode>(mode));
 }

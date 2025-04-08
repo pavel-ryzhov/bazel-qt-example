@@ -22,7 +22,10 @@ private slots:
     void ModeChanged(int mode);
     void RefreshClicked();
 
-private: // NOLINT(readability-redundant-access-specifiers)
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
+private:
     QComboBox* mode_combo_box_;
     QPushButton* refresh_button_;
     MainWidget* main_widget_;

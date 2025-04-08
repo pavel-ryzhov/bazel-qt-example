@@ -3,11 +3,10 @@
 
 #include "ray.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <QPointF>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -41,37 +40,6 @@ class Polygon {
         }
     }
 
-    void Resize(double x_ratio, double y_ratio) {
-        for (auto& vertex : vertices_) {
-            vertex = {vertex.rx() * x_ratio, vertex.ry() * y_ratio};
-        }
-    }
-
-    // std::optional<QPointF> IntersectRay(const Ray& ray) {
-    //     std::optional<QPointF> result;
-    //     double distance = -1;
-    //     for (size_t i = 1; i < vertices_.size(); ++i) {
-    //         const auto intersection = IntersectRay(vertices_[i - 1], vertices_[i], ray);
-    //         if (intersection) {
-    //             const auto d = hypot(
-    //                 intersection->x() - ray.GetBegin().x(), intersection->y() - ray.GetBegin().y());
-    //             if (d > distance) {
-    //                 result = intersection;
-    //                 distance = d;
-    //             }
-    //         }
-    //     }
-    //     return result;
-    // }
-    // [[nodiscard]] Intersection IntersectRay(const Ray& ray) const {
-    //     Intersection result;
-    //     for (size_t i = 1; i < vertices_.size(); ++i) {
-    //         if (const auto intersection = IntersectRay(vertices_[i - 1], vertices_[i], ray); intersection && (!result || intersection->second < result->second)) {
-    //             result = intersection;
-    //         }
-    //     }
-    //     return result;
-    // }
     [[nodiscard]] Intersection IntersectRay(const Ray& ray) const {
         Intersection result;
         for (size_t i = 1; i < vertices_.size(); ++i) {
@@ -84,26 +52,10 @@ class Polygon {
    private:
     std::vector<QPointF> vertices_;
 
-    // static std::optional<QPointF> IntersectRay(
-    //     const QPointF& vertex1, const QPointF& vertex2, const Ray& ray) {
-    //     if (Ray::AreParallel(ray, {vertex2, vertex1})) {
-    //         return std::nullopt;
-    //     }
-    //     const auto [r_px, r_py] = ray.GetBegin();
-    //     const auto r_dx = cos(ray.GetAngle());
-    //     const auto r_dy = sin(ray.GetAngle());
-    //     const auto [s_px, s_py] = vertex1;
-    //     const auto [s_dx, s_dy] = vertex2 - vertex1;
-    //     const auto t2 = (r_dx * (s_py - r_py) + r_dy * (r_px - s_px)) / (s_dx * r_dy - s_dy * r_dx);
-    //     const auto t1 = (s_px + s_dx * t2 - r_px) / r_dx;
-    //     if (t1 < -kEpsilon || t2 < -kEpsilon || t2 > 1 + kEpsilon) {
-    //         return std::nullopt;
-    //     }
-    //     return ray.GetBegin() + QPointF(cos(ray.GetAngle()), sin(ray.GetAngle())) * t1;
-    // }
-
-    static void IntersectRay(const QPointF& vertex1, const QPointF& vertex2, const Ray& ray, Intersection& result) {
-        if (const auto intersection = IntersectRay(vertex1, vertex2, ray); intersection && (!result || intersection->second < result->second)) {
+    static void IntersectRay(
+        const QPointF& vertex1, const QPointF& vertex2, const Ray& ray, Intersection& result) {
+        if (const auto intersection = IntersectRay(vertex1, vertex2, ray);
+            intersection && (!result || intersection->second < result->second)) {
             result = intersection;
         }
     }

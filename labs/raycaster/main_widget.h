@@ -13,6 +13,7 @@ class MainWidget : public QOpenGLWidget {
 
     void SetMode(Controller::Mode mode);
     void Refresh();
+    void Resize();
 
    private slots:
     void Repaint();
@@ -22,18 +23,17 @@ class MainWidget : public QOpenGLWidget {
     void paintEvent(QPaintEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
-    void resizeEvent(QResizeEvent* event) override;
-
-    // void paintGL() override;
-    // void resizeGL(int w, int h) override;
+    void showEvent(QShowEvent* event) override;
 
    private:
     Controller controller_;
     QPixmap static_background_;
-    // QTimer timer_;
 
     void Paint(QPainter* painter);
     void PaintStatic(QPainter* painter);
+
+    [[nodiscard]] QPointF ToRelative(const QPoint& absolute) const;
+    [[nodiscard]] QPoint ToAbsolute(const QPointF& relative) const;
 };
 
 #endif

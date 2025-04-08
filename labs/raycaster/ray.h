@@ -4,7 +4,6 @@
 #include <QPointF>
 #include <cmath>
 #include <cstdlib>
-#include <numbers>
 
 constexpr auto kEpsilon = 1e-9;
 
@@ -18,39 +17,10 @@ class Ray {
         : begin_(begin), end_(end), angle_(NormalizeAngle(angle)) {
     }
 
-    // Ray(const QPointF& begin, const QPointF& end)
-    //     : begin_(begin)
-    //     , end_(end)
-    //     // , angle_(std::atan((end.y() - begin.y()) / (end.x() - begin.x())))
-    //     {
-    //         const auto dx = end.x() - begin.x();
-    //         const auto dy = end.y() - begin.y();
-    //         bool change_sign = false;
-    //         if (std::abs(dx) > kEpsilon) [[likely]] {
-    //             angle_ = NormalizeAngle(std::atan(dy / dx));
-    //             if (dx < -kEpsilon) {
-    //                 change_sign = true;
-    //             }
-    //         } else {
-    //             angle_ = .5 * std::numbers::pi;
-    //             if (dy < -kEpsilon) {
-    //                 change_sign = true;
-    //             }
-    //         }
-    //         if (change_sign) {
-    //             angle_ = NormalizeAngle(angle_ + std::numbers::pi);
-    //         }
-
-    // }
-
     Ray(const QPointF& begin, const QPointF& end)
         : begin_(begin)
         , end_(end)
         , angle_(NormalizeAngle(std::atan2(end.y() - begin.y(), end.x() - begin.x()))) {
-        // , angle_(std::atan((end.y() - begin.y()) / (end.x() - begin.x()))) {
-        // if (end.x() - begin.x() < -kEpsilon) {
-        //     angle_ = NormalizeAngle(angle_ + std::numbers::pi);
-        // }
     }
 
     Ray(const QPointF& begin, double angle, double length)
@@ -100,24 +70,16 @@ class Ray {
         return std::abs(v1.x() * v2.y() - v1.y() * v2.x()) < kEpsilon;
     }
 
-    // bool operator==(const Ray& other) const {
-    //     return std::abs(angle_ - other.angle_) < kEpsilon;
-    // }
-
-    // std::partial_ordering operator<=>(const Ray& other) const {
-    //     return angle_ <=> other.angle_;
-    // }
-
    private:
     QPointF begin_;
     QPointF end_;
     double angle_;
 
     static double NormalizeAngle(double angle) {
-        // while (angle < -kEpsilon) {
-        //     angle += 2 * std::numbers::pi;
-        // }
-        // angle = std::fmod(angle, 2 * std::numbers::pi);
+        while (angle < -kEpsilon) {
+            angle += 2 * std::numbers::pi;
+        }
+        angle = std::fmod(angle, 2 * std::numbers::pi);
         return angle;
     }
 };

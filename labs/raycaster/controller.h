@@ -1,14 +1,13 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "ray.h"
 #include "polygon.h"
+#include "ray.h"
 
-#include <cmath>
-#include <cstddef>
-#include <iostream>
 #include <QObject>
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <iterator>
 #include <ranges>
 #include <utility>
@@ -17,7 +16,8 @@
 constexpr auto kRotateAngle = 1e-4;
 constexpr auto kNearDiffrence = 1e-3;
 constexpr auto kAdditionalLightSourcesCount = 8;
-constexpr auto kAdditionalLightSourceRadius = 10;
+constexpr auto kAdditionalLightSourceRadius = 0.02;
+constexpr auto kBorderOffset = 0.05;
 
 class Controller : public QObject {
     Q_OBJECT
@@ -25,13 +25,15 @@ class Controller : public QObject {
    public:
     enum Mode : uint8_t { Light, Polygons, StaticLights };
 
-    Controller(int width, int height) {
-        // Resize(width, height, width, height);
-        Init(width, height);
+    Controller() {
+        Init();
     }
 
-    void Init(int width, int height) {
-        polygons_.push_back(Polygon{{QPoint{-10, -10}, QPoint{width + 10, -10}, QPoint{width + 10, height + 10}, QPoint{-10, height + 10}}});
+    void Init() {
+        polygons_.push_back(Polygon{
+          {QPointF{-kBorderOffset, -kBorderOffset}, QPointF{1. + kBorderOffset, -kBorderOffset},
+           QPointF{1. + kBorderOffset, 1. + kBorderOffset},
+           QPointF{-kBorderOffset, 1. + kBorderOffset}}});
     }
 
     void AddVertex(const QPointF& vertex) {
@@ -46,24 +48,6 @@ class Controller : public QObject {
 
     void FinishPolygon() {
         drawing_polygon_ = false;
-    }
-
-    void Resize(int width, int height, int old_width, int old_height) {
-        const auto x_ratio = static_cast<double>(width) / old_width;
-        const auto y_ratio = static_cast<double>(height) / old_height;
-        const Polygon p{{QPoint{-10, -10}, QPoint{width + 10, -10}, QPoint{width + 10, height + 10}, QPoint{-10, height + 10}}};
-        if (polygons_.empty()) {
-            polygons_.push_back(p);
-        } else {
-            polygons_.front() = p;
-        }
-        if (HasLightSource()) {
-            light_source_ = {light_source_.rx() * x_ratio, light_source_.ry() * y_ratio};
-        }
-        for (size_t i = 1; i < polygons_.size(); ++i) {
-            polygons_[i].Resize(x_ratio, y_ratio);
-        }
-        emit RepaintStatic();
     }
 
     [[nodiscard]] const std::vector<Polygon>& GetPolygons() const {
@@ -133,7 +117,8 @@ class Controller : public QObject {
         for (auto& ray : *rays) {
             Intersection result;
             for (const auto& polygon : polygons_) {
-                if (const auto intersection = polygon.IntersectRay(ray); intersection && (!result || intersection->second < result->second)) {
+                if (const auto intersection = polygon.IntersectRay(ray);
+                    intersection && (!result || intersection->second < result->second)) {
                     result = intersection;
                 }
             }
@@ -162,7 +147,7 @@ class Controller : public QObject {
     [[nodiscard]] Polygon CreateLightArea() const {
         auto rays = CastRays();
         IntersectRays(&rays);
-        // RemoveAdjacentRays(&rays);
+        RemoveAdjacentRays(&rays);
         return CreateLightArea(rays);
     }
 
@@ -172,22 +157,23 @@ class Controller : public QObject {
         result.reserve(kAdditionalLightSourcesCount);
         for (size_t i = 0; i < kAdditionalLightSourcesCount; ++i) {
             const auto angle = kAngleStep * static_cast<double>(i);
-            auto rays = CastRays(light_source_ + kAdditionalLightSourceRadius * QPointF{std::cos(angle), std::sin(angle)});
+            auto rays = CastRays(
+                light_source_ +
+                kAdditionalLightSourceRadius * QPointF{std::cos(angle), std::sin(angle)});
             IntersectRays(&rays);
-            // RemoveAdjacentRays(&rays);
+            RemoveAdjacentRays(&rays);
             result.push_back(CreateLightArea(rays));
         }
         return result;
     }
 
-    void Refresh(int width, int height) {
+    void Refresh() {
         polygons_.clear();
         static_lights_.clear();
         light_source_ = {-1, -1};
         mode_ = Mode::Polygons;
         drawing_polygon_ = false;
-        // Resize(width, height, width, height);
-        Init(width, height);
+        Init();
         emit RepaintStatic();
     }
 
@@ -203,15 +189,15 @@ class Controller : public QObject {
     bool drawing_polygon_ = false;
 
     static void SortRaysByAngle(std::vector<Ray>* rays) {
-        std::ranges::sort(*rays, [](const Ray& a, const Ray& b){
-            return a.GetAngle() < b.GetAngle();
-        });
+        std::ranges::sort(
+            *rays, [](const Ray& a, const Ray& b) { return a.GetAngle() < b.GetAngle(); });
     }
 
     [[nodiscard]] static Polygon CreateLightArea(const std::vector<Ray>& rays) {
         std::vector<QPointF> result;
         result.reserve(rays.size());
-        std::ranges::copy((rays | std::ranges::views::transform(&Ray::GetEnd)), std::back_inserter(result));
+        std::ranges::copy(
+            (rays | std::ranges::views::transform(&Ray::GetEnd)), std::back_inserter(result));
         return Polygon(result);
     }
 };
