@@ -1,11 +1,10 @@
-#ifndef MAIN_WINDOW_H
-#define MAIN_WINDOW_H
+#pragma once
 
 #include "main_widget.h"
 #include <QMainWindow>
 
-constexpr auto kDefaultWidth = 1200;
-constexpr auto kDefaultHeight = 600;
+constexpr auto kDefaultWidth = 1000;
+constexpr auto kDefaultHeight = 700;
 
 QT_BEGIN_NAMESPACE
 class QComboBox;
@@ -30,5 +29,3 @@ private:
     QPushButton* refresh_button_;
     MainWidget* main_widget_;
 };
-
-#endif

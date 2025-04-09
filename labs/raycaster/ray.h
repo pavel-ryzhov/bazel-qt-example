@@ -1,75 +1,37 @@
-#ifndef RAY_H
-#define RAY_H
+#pragma once
 
 #include <QPointF>
-#include <cmath>
-#include <cstdlib>
-
-#include "utils.h"
 
 class Ray {
    public:
-    Ray(const QPointF& begin, const QPointF& end, double angle)
-        : begin_(begin), end_(end), angle_(NormalizeAngle(angle)) {
-    }
+    Ray(const QPointF& begin, const QPointF& end, double angle);
 
-    Ray(const QPointF& begin, const QPointF& end)
-        : begin_(begin)
-        , end_(end)
-        , angle_(NormalizeAngle(std::atan2(end.y() - begin.y(), end.x() - begin.x()))) {
-    }
+    Ray(const QPointF& begin, const QPointF& end);
 
-    Ray(const QPointF& begin, double angle, double length)
-        : begin_(begin)
-        , end_(QPointF{begin.x() + std::cos(angle) * length, begin.y() + std::sin(angle) * length})
-        , angle_(NormalizeAngle(angle)) {
-    }
+    Ray(const QPointF& begin, double angle, double length);
 
-    Ray(const QPointF& begin, double angle) : Ray{begin, angle, 1} {
-    }
+    Ray(const QPointF& begin, double angle);
 
-    [[nodiscard]] const QPointF& GetBegin() const {
-        return begin_;
-    }
+    [[nodiscard]] const QPointF& GetBegin() const;
 
-    [[nodiscard]] const QPointF& GetEnd() const {
-        return end_;
-    }
+    [[nodiscard]] const QPointF& GetEnd() const;
 
-    [[nodiscard]] double GetAngle() const {
-        return angle_;
-    }
+    [[nodiscard]] double GetAngle() const;
 
-    void SetBegin(const QPointF& begin) {
-        begin_ = begin;
-    }
+    void SetBegin(const QPointF& begin);
 
-    void SetEnd(const QPointF& end) {
-        end_ = end;
-    }
+    void SetEnd(const QPointF& end);
 
-    void SetAngle(double angle) {
-        angle_ = NormalizeAngle(angle);
-    }
+    void SetAngle(double angle);
 
-    [[nodiscard]] Ray Rotate(double angle) const {
-        return {begin_, angle_ + angle, Length()};
-    }
+    [[nodiscard]] Ray Rotate(double angle) const;
 
-    [[nodiscard]] double Length() const {
-        return Distance(begin_, end_);
-    }
+    [[nodiscard]] double Length() const;
 
-    static bool AreParallel(const Ray& ray1, const Ray& ray2) {
-        const auto v1 = ray1.end_ - ray1.begin_;
-        const auto v2 = ray2.end_ - ray2.begin_;
-        return std::abs(v1.x() * v2.y() - v1.y() * v2.x()) < kEpsilon;
-    }
+    static bool AreParallel(const Ray& ray1, const Ray& ray2);
 
    private:
     QPointF begin_;
     QPointF end_;
     double angle_;
 };
-
-#endif

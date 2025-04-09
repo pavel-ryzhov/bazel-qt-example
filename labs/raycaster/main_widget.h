@@ -1,5 +1,4 @@
-#ifndef MAIN_WIDGET_H
-#define MAIN_WIDGET_H
+#pragma once
 
 #include "controller.h"
 
@@ -23,11 +22,15 @@ class MainWidget : public QOpenGLWidget {
     void paintEvent(QPaintEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
     void showEvent(QShowEvent* event) override;
 
    private:
     Controller controller_;
     QPixmap static_background_;
+    bool ctrl_pressed_ = false;
 
     void Paint(QPainter* painter);
     void PaintStatic(QPainter* painter);
@@ -35,5 +38,3 @@ class MainWidget : public QOpenGLWidget {
     [[nodiscard]] QPointF ToRelative(const QPoint& absolute) const;
     [[nodiscard]] QPoint ToAbsolute(const QPointF& relative) const;
 };
-
-#endif

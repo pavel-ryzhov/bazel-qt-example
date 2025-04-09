@@ -28,7 +28,7 @@ MainWindow::MainWindow(): mode_combo_box_(new QComboBox()), refresh_button_(new 
     widget->setLayout(v_layout);
 
     setMinimumSize(kDefaultWidth / 2, kDefaultHeight / 2);
-    resize(kDefaultWidth, kDefaultHeight);
+    setGeometry((screen()->size().width() - kDefaultWidth) / 2, (screen()->size().height() - kDefaultHeight) / 2, kDefaultWidth, kDefaultHeight);
 }
 
 void MainWindow::resizeEvent(QResizeEvent* /*event*/) {

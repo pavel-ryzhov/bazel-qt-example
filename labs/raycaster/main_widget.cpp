@@ -2,11 +2,14 @@
 
 #include "controller.h"
 #include "polygon.h"
+#include "utils.h"
+#include <vector>
 
 // NOLINTBEGIN(cppcoreguidelines-owning-memory, *-unused-return-value)
 
 MainWidget::MainWidget(QWidget* parent) : QOpenGLWidget(parent) {
     setMouseTracking(true);
+    setFocusPolicy(Qt::StrongFocus);
     connect(&controller_, &Controller::RepaintStatic, this, &MainWidget::RepaintStatic);
     connect(&controller_, &Controller::Repaint, this, &MainWidget::Repaint);
 }
@@ -17,6 +20,16 @@ void MainWidget::SetMode(Controller::Mode mode) {
 
 void MainWidget::Resize() {
     RepaintStatic();
+}
+
+static void DrawPoints(QPainter* painter, const std::vector<QPointF>& points, const QColor& color) {
+    painter->save();
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(color);
+    for (const auto& point : points) {
+        painter->drawEllipse(point, .25 * kCaptureRadius, .25 * kCaptureRadius); 
+    }
+    painter->restore();
 }
 
 void MainWidget::paintEvent(QPaintEvent* /*event*/) {
@@ -31,16 +44,34 @@ void MainWidget::paintEvent(QPaintEvent* /*event*/) {
 }
 
 void MainWidget::mouseMoveEvent(QMouseEvent* event) {
-    if (controller_.GetMode() == Controller::Mode::Light) {
-        controller_.SetLightSource(ToRelative(event->pos()));
+    const auto pos = ToRelative(event->pos());
+    switch (controller_.GetMode()) {
+        case Controller::Mode::Light: {
+            controller_.SetLightSource(pos);
+            break;
+        }
+        case Controller::Mode::Polygons: {
+            auto vertex = controller_.GetCapturedVertex();
+            if (vertex) {
+                **vertex = pos;
+                RepaintStatic();
+            }
+            break;
+        }
+        default: {}
     }
 }
 
 void MainWidget::mousePressEvent(QMouseEvent* event) {
+    const auto pos = ToRelative(event->pos());
     if (controller_.GetMode() == Controller::Mode::Polygons) {
         switch (event->button()) {
             case Qt::LeftButton: {
-                controller_.AddVertex(ToRelative(event->pos()));
+                if (ctrl_pressed_) {
+                    controller_.StartVertexDrag(pos);
+                } else {
+                    controller_.AddVertex(pos);
+                }
                 break;
             }
             case Qt::RightButton: {
@@ -50,6 +81,33 @@ void MainWidget::mousePressEvent(QMouseEvent* event) {
             default: {
             }
         }
+    }
+}
+
+void MainWidget::mouseReleaseEvent(QMouseEvent* event) {
+    if (controller_.GetMode() == Controller::Mode::Polygons) {
+        switch (event->button()) {
+            case Qt::LeftButton: {
+                if (ctrl_pressed_) {
+                    controller_.FinishVertexDrag();
+                }
+                break;
+            }
+            default: {}
+        }
+    }
+}
+
+void MainWidget::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Control) {
+        ctrl_pressed_ = true;
+    }
+}
+
+void MainWidget::keyReleaseEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Control) {
+        ctrl_pressed_ = false;
+        controller_.FinishVertexDrag();
     }
 }
 
@@ -77,25 +135,42 @@ void MainWidget::PaintStatic(QPainter* painter) {
     painter->setPen(pen);
     for (const auto& polygon : controller_.GetPolygons()) {
         painter->drawPolygon(
-            polygon.GetVertecis().data(), static_cast<int>(polygon.GetVertecis().size()));
+            polygon.GetVertices().data(), static_cast<int>(polygon.GetVertices().size()));
     }
 }
 
 void MainWidget::Paint(QPainter* painter) {
-    if (controller_.HasLightSource() && controller_.GetMode() == Controller::Mode::Light) {
-        const auto light_area = controller_.CreateLightArea();
-        const auto additional_polygons = controller_.CreateAdditionalLightAreas();
-        painter->setRenderHint(QPainter::Antialiasing);
-        painter->setBrush(Qt::white);
-        painter->setPen(Qt::NoPen);
-        painter->drawPolygon(
-            light_area.GetVertecis().data(), static_cast<int>(light_area.GetVertecis().size()));
-        painter->setBrush(QColor(255, 255, 255, 32));
-        for (const auto& polygon : additional_polygons) {
-            painter->drawPolygon(
-                polygon.GetVertecis().data(), static_cast<int>(polygon.GetVertecis().size()));
+    switch (controller_.GetMode()) {
+        case Controller::Mode::Light: {
+            if (controller_.HasLightSource()) {
+                const auto shadow_alpha = static_cast<int>(255 * kShadowAlpha);
+                const auto light_area = controller_.CreateLightArea();
+                const auto additional_polygons = controller_.CreateAdditionalLightAreas();
+                painter->setRenderHint(QPainter::Antialiasing);
+                painter->setBrush(Qt::white);
+                painter->setPen(Qt::NoPen);
+                painter->drawPolygon(
+                    light_area.GetVertices().data(), static_cast<int>(light_area.GetVertices().size()));
+                painter->setBrush(QColor(255, 255, 255, shadow_alpha));
+                for (const auto& polygon : additional_polygons) {
+                    painter->drawPolygon(
+                        polygon.GetVertices().data(), static_cast<int>(polygon.GetVertices().size()));
+                }
+            }
+            break;
+        }
+        case Controller::Mode::Polygons: {
+            const QColor polygon_color{kPolygonColor};
+            for (const auto& polygon : controller_.GetPolygons()) {
+                DrawPoints(painter, polygon.GetVertices(), polygon_color);
+            }
+            break;
+        }
+        case Controller::Mode::StaticLights: {
+            break;
         }
     }
+    
 }
 
 void MainWidget::showEvent(QShowEvent* /*event*/) {
@@ -103,8 +178,7 @@ void MainWidget::showEvent(QShowEvent* /*event*/) {
 }
 
 QPointF MainWidget::ToRelative(const QPoint& absolute) const {
-    return {
-      static_cast<double>(absolute.x()) / width(), static_cast<double>(absolute.y()) / height()};
+    return {static_cast<double>(absolute.x()) / width(), static_cast<double>(absolute.y()) / height()};
 }
 
 QPoint MainWidget::ToAbsolute(const QPointF& relative) const {
