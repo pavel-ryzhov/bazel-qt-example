@@ -5,11 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 
-constexpr auto kEpsilon = 1e-9;
-
-inline double Distance(const QPointF& a, const QPointF& b) {
-    return std::hypot(a.x() - b.x(), a.y() - b.y());
-}
+#include "utils.h"
 
 class Ray {
    public:
@@ -74,14 +70,6 @@ class Ray {
     QPointF begin_;
     QPointF end_;
     double angle_;
-
-    static double NormalizeAngle(double angle) {
-        while (angle < -kEpsilon) {
-            angle += 2 * std::numbers::pi;
-        }
-        angle = std::fmod(angle, 2 * std::numbers::pi);
-        return angle;
-    }
 };
 
 #endif

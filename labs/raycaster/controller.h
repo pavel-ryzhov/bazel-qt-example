@@ -9,15 +9,19 @@
 #include <cmath>
 #include <cstddef>
 #include <iterator>
+#include <optional>
 #include <ranges>
 #include <utility>
 #include <vector>
 
 constexpr auto kRotateAngle = 1e-4;
 constexpr auto kNearDiffrence = 1e-3;
-constexpr auto kAdditionalLightSourcesCount = 8;
+constexpr auto kAdditionalLightSourcesCount = 6;
 constexpr auto kAdditionalLightSourceRadius = 0.02;
 constexpr auto kBorderOffset = 0.05;
+constexpr auto kCaptureRadius = 0.05;
+
+using NearestPoint = std::optional<std::pair<std::vector<QPointF>::iterator, double>>;
 
 class Controller : public QObject {
     Q_OBJECT
@@ -167,6 +171,15 @@ class Controller : public QObject {
         return result;
     }
 
+    void AddStaticLightSource(const QPointF& point) {
+        static_lights_.push_back(point);
+        emit RepaintStatic();
+    }
+
+    // void UpdateStaticLightSource(const QPointF& point) {
+
+    // }
+
     void Refresh() {
         polygons_.clear();
         static_lights_.clear();
@@ -187,6 +200,13 @@ class Controller : public QObject {
     Mode mode_ = Mode::Polygons;
     std::vector<QPointF> static_lights_;
     bool drawing_polygon_ = false;
+
+    std::optional<std::vector<QPointF>::iterator> CaptureVertex(const QPointF& pos) const {
+        NearestPoint result;
+        for (auto& polygon : polygons_) {
+            FindNearestPoint(, const QPointF &pos, NearestPoint &nearest_point)
+        }
+    }
 
     static void SortRaysByAngle(std::vector<Ray>* rays) {
         std::ranges::sort(
