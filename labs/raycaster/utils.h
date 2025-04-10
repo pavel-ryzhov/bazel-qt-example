@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ray.h"
+
 #include <QColor>
 #include <QPointF>
 #include <optional>
@@ -9,6 +11,8 @@ using Intersection = std::optional<std::pair<QPointF, double>>;
 using NearestPoint = std::optional<std::pair<std::vector<QPointF>::iterator, double>>;
 using CapturedPoint = std::optional<std::vector<QPointF>::iterator>;
 
+constexpr auto kDefaultWindowWidth = 1000;
+constexpr auto kDefaultWindowHeight = 700;
 constexpr auto kEpsilon = 1e-9;
 constexpr auto kRotateAngle = 1e-4;
 constexpr auto kNearDiffrence = 1e-3;
@@ -39,4 +43,9 @@ inline double NormalizeAngle(double angle) {
     }
     angle = std::fmod(angle, 2 * std::numbers::pi);
     return angle;
+}
+
+inline void SortRaysByAngle(std::vector<Ray>* rays) {
+    std::ranges::sort(
+        *rays, [](const Ray& a, const Ray& b) { return a.GetAngle() < b.GetAngle(); });
 }

@@ -52,7 +52,15 @@ class Controller : public QObject {
 
     [[nodiscard]] std::vector<Polygon> CreateAdditionalLightAreas() const;
 
+    [[nodiscard]] std::vector<Polygon> CreateStaticLightArea() const;
+
+    [[nodiscard]] std::vector<std::vector<Polygon>> CreateAdditionalStaticLightAreas() const;
+
     void AddStaticLightSource(const QPointF& point);
+
+    void RemoveStaticLightSource(const QPointF& point);
+
+    [[nodiscard]] const std::vector<QPointF>& GetStaticLights() const;
 
     void Refresh();
 
@@ -74,11 +82,14 @@ class Controller : public QObject {
     bool drawing_polygon_ = false;
     CapturedPoint captured_vertex_;
 
+    [[nodiscard]] std::vector<Polygon> CreateAdditionalLightAreas(
+        const QPointF& light_source) const;
+
+    [[nodiscard]] Polygon CreateLightArea(const QPointF& light_source) const;
+
     [[nodiscard]] CapturedPoint CaptureVertex(const QPointF& pos);
 
     [[nodiscard]] CapturedPoint CaptureStaticLightSource(const QPointF& pos);
-
-    static void SortRaysByAngle(std::vector<Ray>* rays);
 
     [[nodiscard]] static Polygon CreateLightArea(const std::vector<Ray>& rays);
 };

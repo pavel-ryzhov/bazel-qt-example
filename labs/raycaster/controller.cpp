@@ -133,21 +133,25 @@ void Controller::RemoveAdjacentRays(std::vector<Ray>* rays) {
     *rays = std::move(unique_rays);
 }
 
-Polygon Controller::CreateLightArea() const {
-    auto rays = CastRays();
+Polygon Controller::CreateLightArea(const QPointF& light_source) const {
+    auto rays = CastRays(light_source);
     IntersectRays(&rays);
     RemoveAdjacentRays(&rays);
     return CreateLightArea(rays);
 }
 
-std::vector<Polygon> Controller::CreateAdditionalLightAreas() const {
+Polygon Controller::CreateLightArea() const {
+    return CreateLightArea(light_source_);
+}
+
+std::vector<Polygon> Controller::CreateAdditionalLightAreas(const QPointF& light_source) const {
     constexpr auto kAngleStep = 2 * std::numbers::pi / kAdditionalLightSourcesCount;
     std::vector<Polygon> result;
     result.reserve(kAdditionalLightSourcesCount);
     for (size_t i = 0; i < kAdditionalLightSourcesCount; ++i) {
         const auto angle = kAngleStep * static_cast<double>(i);
         auto rays = CastRays(
-            light_source_ +
+            light_source +
             kAdditionalLightSourceRadius * QPointF{std::cos(angle), std::sin(angle)});
         IntersectRays(&rays);
         RemoveAdjacentRays(&rays);
@@ -156,14 +160,43 @@ std::vector<Polygon> Controller::CreateAdditionalLightAreas() const {
     return result;
 }
 
+std::vector<Polygon> Controller::CreateAdditionalLightAreas() const {
+    return CreateAdditionalLightAreas(light_source_);
+}
+
+std::vector<Polygon> Controller::CreateStaticLightArea() const {
+    std::vector<Polygon> result;
+    result.reserve(static_lights_.size());
+    for (const auto& light_source : static_lights_) {
+        result.push_back(CreateLightArea(light_source));
+    }
+    return result;
+}
+
+std::vector<std::vector<Polygon>> Controller::CreateAdditionalStaticLightAreas() const {
+    std::vector<std::vector<Polygon>> result;
+    result.reserve(static_lights_.size());
+    for (const auto& light_source : static_lights_) {
+        result.push_back(CreateAdditionalLightAreas(light_source));
+    }
+    return result;
+}
+
+const std::vector<QPointF>& Controller::GetStaticLights() const {
+    return static_lights_;
+}
+
 void Controller::AddStaticLightSource(const QPointF& point) {
     static_lights_.push_back(point);
     emit RepaintStatic();
 }
 
-// void UpdateStaticLightSource(const QPointF& point) {
-
-// }
+void Controller::RemoveStaticLightSource(const QPointF& point) {
+    if (const auto light_source = CaptureStaticLightSource(point); light_source) {
+        static_lights_.erase(*light_source);
+        emit RepaintStatic();
+    }
+}
 
 void Controller::Refresh() {
     polygons_.clear();
@@ -184,15 +217,11 @@ std::optional<std::vector<QPointF>::iterator> Controller::CaptureVertex(const QP
     return result ? std::make_optional(result->first) : std::nullopt;
 }
 
-std::optional<std::vector<QPointF>::iterator> Controller::CaptureStaticLightSource(const QPointF& pos) {
+std::optional<std::vector<QPointF>::iterator> Controller::CaptureStaticLightSource(
+    const QPointF& pos) {
     NearestPoint result;
     FindNearestPoint(&static_lights_, pos, result);
     return result ? std::make_optional(result->first) : std::nullopt;
-}
-
-void Controller::SortRaysByAngle(std::vector<Ray>* rays) {
-    std::ranges::sort(
-        *rays, [](const Ray& a, const Ray& b) { return a.GetAngle() < b.GetAngle(); });
 }
 
 Polygon Controller::CreateLightArea(const std::vector<Ray>& rays) {
@@ -214,4 +243,3 @@ void Controller::StartVertexDrag(const QPointF& pos) {
 void Controller::FinishVertexDrag() {
     captured_vertex_ = std::nullopt;
 }
-

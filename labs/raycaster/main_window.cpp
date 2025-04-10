@@ -1,17 +1,22 @@
 #include "main_window.h"
+
 #include "controller.h"
 #include "main_widget.h"
 
 #include <QtWidgets>
 
-//NOLINTBEGIN(cppcoreguidelines-owning-memory, *-unused-return-value)
-MainWindow::MainWindow(): mode_combo_box_(new QComboBox()), refresh_button_(new QPushButton("Refresh")), main_widget_(new MainWidget()) {
+// NOLINTBEGIN(cppcoreguidelines-owning-memory, *-unused-return-value)
+MainWindow::MainWindow()
+    : mode_combo_box_(new QComboBox())
+    , refresh_button_(new QPushButton("Refresh"))
+    , main_widget_(new MainWidget()) {
     auto* widget = new QWidget();
     setCentralWidget(widget);
     setWindowTitle("RAYCASTER");
 
     mode_combo_box_->addItems({"Light", "Polygons", "Static Lights"});
     mode_combo_box_->setCurrentIndex(Controller::Mode::Polygons);
+    mode_combo_box_->setFocusPolicy(Qt::NoFocus);
 
     connect(mode_combo_box_, &QComboBox::currentIndexChanged, this, &MainWindow::ModeChanged);
     connect(refresh_button_, &QPushButton::clicked, main_widget_, &MainWidget::Refresh);
@@ -27,8 +32,10 @@ MainWindow::MainWindow(): mode_combo_box_(new QComboBox()), refresh_button_(new 
 
     widget->setLayout(v_layout);
 
-    setMinimumSize(kDefaultWidth / 2, kDefaultHeight / 2);
-    setGeometry((screen()->size().width() - kDefaultWidth) / 2, (screen()->size().height() - kDefaultHeight) / 2, kDefaultWidth, kDefaultHeight);
+    setMinimumSize(kDefaultWindowWidth / 2, kDefaultWindowHeight / 2);
+    setGeometry(
+        (screen()->size().width() - kDefaultWindowWidth) / 2,
+        (screen()->size().height() - kDefaultWindowHeight) / 2, kDefaultWindowWidth, kDefaultWindowHeight);
 }
 
 void MainWindow::resizeEvent(QResizeEvent* /*event*/) {
@@ -42,4 +49,5 @@ void MainWindow::ModeChanged(int mode) {
 void MainWindow::RefreshClicked() {
     mode_combo_box_->setCurrentIndex(Controller::Mode::Polygons);
 }
-//NOLINTEND(cppcoreguidelines-owning-memory, *-unused-return-value)
+
+// NOLINTEND(cppcoreguidelines-owning-memory, *-unused-return-value)

@@ -1,10 +1,8 @@
 #pragma once
 
 #include "main_widget.h"
-#include <QMainWindow>
 
-constexpr auto kDefaultWidth = 1000;
-constexpr auto kDefaultHeight = 700;
+#include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
 class QComboBox;
@@ -14,17 +12,17 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-public:
+   public:
     MainWindow();
 
-private slots:
+   private slots:
     void ModeChanged(int mode);
     void RefreshClicked();
 
-protected:
+   protected:
     void resizeEvent(QResizeEvent* event) override;
 
-private:
+   private:
     QComboBox* mode_combo_box_;
     QPushButton* refresh_button_;
     MainWidget* main_widget_;

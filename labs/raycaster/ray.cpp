@@ -1,4 +1,5 @@
 #include "ray.h"
+
 #include "utils.h"
 
 #include <QPointF>
