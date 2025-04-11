@@ -21,7 +21,8 @@ constexpr auto kAdditionalLightSourceRadius = 0.02;
 constexpr auto kBorderOffset = 0.05;
 constexpr auto kCaptureRadius = 0.02;
 constexpr auto kShadowAlpha = 0.125;
-constexpr auto kPolygonColor = Qt::green;
+constexpr auto kTimerRepaint = false;
+constexpr auto kTimerDelay = 16;
 
 inline double Distance(const QPointF& a, const QPointF& b) {
     return std::hypot(a.x() - b.x(), a.y() - b.y());

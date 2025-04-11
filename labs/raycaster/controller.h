@@ -1,7 +1,6 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "labs/raycaster/utils.h"
 #include "polygon.h"
 #include "ray.h"
 

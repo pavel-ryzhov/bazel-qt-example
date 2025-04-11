@@ -2,6 +2,7 @@
 
 #include "controller.h"
 #include "main_widget.h"
+#include "utils.h"
 
 #include <QtWidgets>
 
@@ -35,7 +36,8 @@ MainWindow::MainWindow()
     setMinimumSize(kDefaultWindowWidth / 2, kDefaultWindowHeight / 2);
     setGeometry(
         (screen()->size().width() - kDefaultWindowWidth) / 2,
-        (screen()->size().height() - kDefaultWindowHeight) / 2, kDefaultWindowWidth, kDefaultWindowHeight);
+        (screen()->size().height() - kDefaultWindowHeight) / 2, kDefaultWindowWidth,
+        kDefaultWindowHeight);
 }
 
 void MainWindow::resizeEvent(QResizeEvent* /*event*/) {

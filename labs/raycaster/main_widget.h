@@ -17,6 +17,7 @@ class MainWidget : public QOpenGLWidget {
    private slots:
     void Repaint();
     void RepaintStatic();
+    void RepaintByTimer();
 
    protected:
     void paintEvent(QPaintEvent* event) override;
@@ -31,6 +32,7 @@ class MainWidget : public QOpenGLWidget {
     Controller controller_;
     QPixmap static_background_;
     bool ctrl_pressed_ = false;
+    QTimer timer_;
 
     void Paint(QPainter* painter);
     void PaintStatic(QPainter* painter);

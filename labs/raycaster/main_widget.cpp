@@ -13,6 +13,11 @@ MainWidget::MainWidget(QWidget* parent) : QOpenGLWidget(parent) {
     setFocusPolicy(Qt::StrongFocus);
     connect(&controller_, &Controller::RepaintStatic, this, &MainWidget::RepaintStatic);
     connect(&controller_, &Controller::Repaint, this, &MainWidget::Repaint);
+    connect(&timer_, &QTimer::timeout, this, &MainWidget::RepaintByTimer);
+    if constexpr (kTimerRepaint) {
+        timer_.setInterval(kTimerDelay);
+        timer_.start();
+    }
 }
 
 void MainWidget::SetMode(Controller::Mode mode) {
@@ -87,7 +92,6 @@ void MainWidget::mousePressEvent(QMouseEvent* event) {
             break;
         }
         case Controller::Mode::StaticLights: {
-            qDebug() << ctrl_pressed_;
             if (event->button() == Qt::LeftButton) {
                 if (ctrl_pressed_) {
                     controller_.RemoveStaticLightSource(pos);
@@ -135,6 +139,12 @@ void MainWidget::Refresh() {
 }
 
 void MainWidget::Repaint() {
+    if constexpr (!kTimerRepaint) {
+        repaint();
+    }
+}
+
+void MainWidget::RepaintByTimer() {
     repaint();
 }
 
@@ -182,7 +192,7 @@ void MainWidget::Paint(QPainter* painter) {
                 const auto light_area = controller_.CreateLightArea();
                 const auto additional_polygons = controller_.CreateAdditionalLightAreas();
                 painter->setRenderHint(QPainter::Antialiasing);
-                painter->setBrush(Qt::white);
+                painter->setBrush(QColor(255, 255, 255, 200));
                 painter->setPen(Qt::NoPen);
                 painter->drawPolygon(
                     light_area.GetVertices().data(),
@@ -200,9 +210,8 @@ void MainWidget::Paint(QPainter* painter) {
             break;
         }
         case Controller::Mode::Polygons: {
-            const QColor polygon_color{kPolygonColor};
             for (const auto& polygon : controller_.GetPolygons()) {
-                DrawPoints(painter, polygon.GetVertices(), polygon_color);
+                DrawPoints(painter, polygon.GetVertices(), Qt::green);
             }
             break;
         }

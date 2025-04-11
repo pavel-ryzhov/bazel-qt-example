@@ -7,6 +7,7 @@
 QT_BEGIN_NAMESPACE
 class QComboBox;
 class QPushButton;
+class QCheckBox;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
