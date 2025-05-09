@@ -4,10 +4,12 @@ qt_cc_library(
     name = "duolingo_lib",
     srcs = [
         "main_window.cpp",
+        "entities.cpp",
         "database.cpp",
     ],
     hdrs = [
         "main_window.h",
+        "entities.h",
         "database.h",
     ],
     deps = [
@@ -15,6 +17,9 @@ qt_cc_library(
         "@rules_qt//:qt_gui",
         "@rules_qt//:qt_widgets",
         "@rules_qt//:qt_sql",
+    ],
+    data = [
+        "database.db",
     ],
 )
 

@@ -63,13 +63,13 @@ static const QString kCreateGrammarTasksTableQuery =
 static const QString kInsertTaskQuery =
     kInsert3ArgTaskQueryTemplate.arg(kTasksTable, kTypeField, kDifficultyField, kCompletionField);
 static const QString kInsertTranslationTaskQuery =
-    QString(R"(
-    INSERT INTO %1 (%2, %3)
-    VALUES (:%2, :%3)
-)")
-        .arg(kTranslationTasksTable, kTaskField, kAnswerField);
+    kInsert3ArgTaskQueryTemplate.arg(kTranslationTasksTable, kIdField, kTaskField, kAnswerField);
 static const QString kInsertGrammarTaskQuery =
-    kInsert3ArgTaskQueryTemplate.arg(kGrammarTasksTable, kTaskField, kOptionsField, kAnswerField);
+    QString(R"(
+    INSERT INTO %1 (%2, %3, %4, %5)
+    VALUES (:%2, :%3, :%4, :%5)
+)")
+        .arg(kGrammarTasksTable, kIdField, kTaskField, kOptionsField, kAnswerField);
 static const QString kSelectRandomTasksByDifficultyAndCompletionQuery =
     QString(R"(
     SELECT * FROM %1

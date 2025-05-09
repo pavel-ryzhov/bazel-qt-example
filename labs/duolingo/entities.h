@@ -4,6 +4,7 @@
 #include <QString>
 #include <cstdint>
 #include <memory>
+#include <ostream>
 
 class QSqlQuery;
 
@@ -21,6 +22,10 @@ class Task {
     Task(int id, uint8_t difficulty, uint8_t completion)
         : Task(id, static_cast<Difficulty>(difficulty), static_cast<Completion>(completion)) {
     }
+
+    Task(Difficulty difficulty, Completion completion) : Task(-1, difficulty, completion) {}
+
+    Task(uint8_t difficulty, uint8_t completion) : Task(-1, difficulty, completion) {}
 
     [[nodiscard]] int GetId() const {
         return id_;
@@ -64,6 +69,8 @@ class TranslationTask : public Task {
     TranslationTask(
         int id, Difficulty difficulty, Completion completion, QString task, QString answer);
     TranslationTask(int id, uint8_t difficulty, uint8_t completion, QString task, QString answer);
+    TranslationTask(Difficulty difficulty, Completion completion, QString task, QString answer);
+    TranslationTask(uint8_t difficulty, uint8_t completion, QString task, QString answer);
 
     [[nodiscard]] const QString& GetTask() const {
         return task_;
@@ -95,6 +102,11 @@ class GrammarTask : public Task {
     GrammarTask(
         int id, uint8_t difficulty, uint8_t completion, QString task, QStringList options,
         int answer);
+    GrammarTask(
+        Difficulty difficulty, Completion completion, QString task, QStringList options,
+        int answer);
+    GrammarTask(
+        uint8_t difficulty, uint8_t completion, QString task, QStringList options, int answer);
 
     [[nodiscard]] const QString& GetTask() const {
         return task_;
@@ -121,3 +133,5 @@ class GrammarTask : public Task {
 
     void ReadQuery(const QSqlQuery& query) override;
 };
+
+std::ostream& operator<<(std::ostream& os, const Task& task);

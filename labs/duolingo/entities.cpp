@@ -25,13 +25,13 @@ void Task::ReadQuery(const QSqlQuery& query) {
     completion_ = static_cast<Completion>(query.value(kCompletionField).toUInt());
 }
 
-std::unique_ptr<Task> FromQuery(const QSqlQuery& query) {
+std::unique_ptr<Task> Task::FromQuery(const QSqlQuery& query) {
     return Task::FromQuery(query, query);
 }
 
 std::unique_ptr<Task> Task::FromQuery(const QSqlQuery& base_query, const QSqlQuery& query) {
     std::unique_ptr<Task> task;
-    switch (query.value(kTypeField).toUInt()) {
+    switch (base_query.value(kTypeField).toUInt()) {
         case Task::Translation: {
             task = std::make_unique<TranslationTask>();
             break;
@@ -56,6 +56,16 @@ TranslationTask::TranslationTask(
 TranslationTask::TranslationTask(
     int id, uint8_t difficulty, uint8_t completion, QString task, QString answer)
     : Task(id, difficulty, completion), task_(std::move(task)), answer_(std::move(answer)) {
+}
+
+TranslationTask::TranslationTask(
+    Difficulty difficulty, Completion completion, QString task, QString answer)
+    : Task(difficulty, completion), task_(std::move(task)), answer_(std::move(answer)) {
+}
+
+TranslationTask::TranslationTask(
+    uint8_t difficulty, uint8_t completion, QString task, QString answer)
+    : Task(difficulty, completion), task_(std::move(task)), answer_(std::move(answer)) {
 }
 
 void TranslationTask::BindToQuery(QSqlQuery* query) const {
@@ -85,6 +95,22 @@ GrammarTask::GrammarTask(
     , answer_(answer) {
 }
 
+GrammarTask::GrammarTask(
+    Difficulty difficulty, Completion completion, QString task, QStringList options, int answer)
+    : Task(difficulty, completion)
+    , task_(std::move(task))
+    , options_(std::move(options))
+    , answer_(answer) {
+}
+
+GrammarTask::GrammarTask(
+    uint8_t difficulty, uint8_t completion, QString task, QStringList options, int answer)
+    : Task(difficulty, completion)
+    , task_(std::move(task))
+    , options_(std::move(options))
+    , answer_(answer) {
+}
+
 void GrammarTask::BindToQuery(QSqlQuery* query) const {
     query->bindValue(colon + kTaskField, task_);
     query->bindValue(colon + kOptionsField, options_.join('\x1E'));
@@ -95,4 +121,25 @@ void GrammarTask::ReadQuery(const QSqlQuery& query) {
     task_ = query.value(kTaskField).toString();
     options_ = query.value(kOptionsField).toString().split('\x1E');
     answer_ = query.value(kAnswerField).toInt();
+}
+
+std::ostream& operator<<(std::ostream& os, const Task& task) {
+    switch (task.GetType()) {
+        case Task::Translation: {
+            const auto& tt = dynamic_cast<const TranslationTask&>(task);
+            return os << "TranslationTask{" << tt.GetId() << ", "
+                      << static_cast<int>(tt.GetDifficulty()) << ", "
+                      << static_cast<int>(tt.GetCompletion()) << ", "
+                      << tt.GetTask().toStdString() << ", " << tt.GetAnswer().toStdString() << "}";
+        }
+        case Task::Grammar: {
+            const auto& gt = dynamic_cast<const GrammarTask&>(task);
+            return os << "TranslationTask{" << gt.GetId() << ", "
+                      << static_cast<int>(gt.GetDifficulty()) << ", "
+                      << static_cast<int>(gt.GetCompletion()) << ", "
+                      << gt.GetTask().toStdString() << ", {"
+                      << gt.GetOptions().join(", ").toStdString() << "}, " << gt.GetAnswer() << "}";
+        }
+    }
+    return os;
 }
