@@ -5,12 +5,15 @@
 #include <cstdint>
 #include <memory>
 #include <ostream>
+#include <utility>
+
+constexpr auto kScoreMultiplier = 10;
 
 class QSqlQuery;
 
 class Task {
    public:
-    enum Difficulty : uint8_t { Low, Middle, High };
+    enum Difficulty : uint8_t { Low, Medium, High };
 
     enum Type : uint8_t { Translation, Grammar };
 
@@ -54,6 +57,15 @@ class Task {
     Task& operator=(const Task&) = default;
     Task& operator=(Task&&) = default;
 
+    static QString GetDifficultyText(Difficulty difficulty) {
+        switch (difficulty) {
+            case Low: return "Низкая";
+            case Medium: return "Средняя";
+            case High: return "Высокая";
+        }
+        return "";
+    }
+
    protected:
     virtual void ReadQuery(const QSqlQuery& query);
 
@@ -62,6 +74,8 @@ class Task {
     Difficulty difficulty_ = Low;
     Completion completion_ = NotDone;
 };
+
+using TaskResult = std::pair<bool, int>;
 
 class TranslationTask : public Task {
    public:
@@ -86,11 +100,15 @@ class TranslationTask : public Task {
 
     void BindToQuery(QSqlQuery* query) const override;
 
+    [[nodiscard]] TaskResult GetScore(const QString& actual_answer) const;
+
    private:
     QString task_;
     QString answer_;
 
     void ReadQuery(const QSqlQuery& query) override;
+
+    [[nodiscard]] double GradeAnswer(const QString& actual_answer) const;
 };
 
 class GrammarTask : public Task {
@@ -125,6 +143,8 @@ class GrammarTask : public Task {
     }
 
     void BindToQuery(QSqlQuery* query) const override;
+
+    [[nodiscard]] TaskResult GetScore(int actual_answer) const;
 
    private:
     QString task_;

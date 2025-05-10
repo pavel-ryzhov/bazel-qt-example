@@ -78,6 +78,15 @@ void TranslationTask::ReadQuery(const QSqlQuery& query) {
     answer_ = query.value(kAnswerField).toString();
 }
 
+TaskResult TranslationTask::GetScore(const QString& actual_answer) const {
+    const double result = GradeAnswer(actual_answer);
+    return std::make_pair(result > .9, static_cast<int>((GetDifficulty() + 1) * 2 * result * kScoreMultiplier));
+}
+
+double TranslationTask::GradeAnswer(const QString& actual_answer) const {
+    return static_cast<double>(actual_answer == answer_);
+}
+
 GrammarTask::GrammarTask(
     int id, Difficulty difficulty, Completion completion, QString task, QStringList options,
     int answer)
@@ -109,6 +118,11 @@ GrammarTask::GrammarTask(
     , task_(std::move(task))
     , options_(std::move(options))
     , answer_(answer) {
+}
+
+TaskResult GrammarTask::GetScore(int actual_answer) const {
+    const bool result = actual_answer == answer_;
+    return std::make_pair(result, static_cast<int>(result) * (GetDifficulty() + 1) * kScoreMultiplier);
 }
 
 void GrammarTask::BindToQuery(QSqlQuery* query) const {

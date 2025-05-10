@@ -6,11 +6,15 @@ qt_cc_library(
         "main_window.cpp",
         "entities.cpp",
         "database.cpp",
+        "settings.cpp",
+        "tasks_widget.cpp",
     ],
     hdrs = [
         "main_window.h",
         "entities.h",
         "database.h",
+        "settings.h",
+        "tasks_widget.h",
     ],
     deps = [
         "@rules_qt//:qt_core",
@@ -19,7 +23,8 @@ qt_cc_library(
         "@rules_qt//:qt_sql",
     ],
     data = [
-        "database.db",
+        "data/database.db",
+        "data/settings.ini",
     ],
 )
 
