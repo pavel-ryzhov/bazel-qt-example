@@ -1,5 +1,13 @@
 load("@rules_qt//:qt.bzl", "qt_cc_binary", "qt_cc_library")
 
+filegroup(
+    name = "data_files",
+    srcs = [
+        "data/database.db",
+        "data/settings.ini",
+    ],
+)
+
 qt_cc_library(
     name = "duolingo_lib",
     srcs = [
@@ -22,10 +30,7 @@ qt_cc_library(
         "@rules_qt//:qt_widgets",
         "@rules_qt//:qt_sql",
     ],
-    data = [
-        "data/database.db",
-        "data/settings.ini",
-    ],
+    data = [":data_files"],
 )
 
 qt_cc_binary(

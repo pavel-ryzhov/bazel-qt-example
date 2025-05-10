@@ -37,10 +37,13 @@ constexpr auto kMainStyle = R"(
             padding: 8px;
         }
     )";
-constexpr auto kLargeTextStyle = R"(
+constexpr auto kLargeBoldTextStyle = R"(
     font-size: 16pt;
     font-weight: bold;
 )";
+constexpr auto kLargeTextStyle = "font-size: 16pt;";
+
+constexpr auto kButtonTypeKey = "type";
 
 // NOLINTBEGIN(cppcoreguidelines-owning-memory, *-unused-return-value)
 MainWindow::MainWindow()
@@ -54,8 +57,8 @@ MainWindow::MainWindow()
     setWindowTitle("DUOLINGO");
 
     setStyleSheet(kMainStyle);
-    score_label_->setStyleSheet(kLargeTextStyle);
-    difficulty_label_->setStyleSheet(kLargeTextStyle);
+    score_label_->setStyleSheet(kLargeBoldTextStyle);
+    difficulty_label_->setStyleSheet(kLargeBoldTextStyle);
 
     menu_score_label_->setStyleSheet("background: #21252b; padding-right: 10px");
     auto* menu_bar = new QMenuBar();
@@ -72,18 +75,6 @@ MainWindow::MainWindow()
     menu_layout->addWidget(menu_score_label_);
     setMenuWidget(menu_container);
 
-    // auto* corner_container = new QWidget();
-    // auto* corner_layout = new QVBoxLayout();
-    // corner_layout->setContentsMargins(0, 0, 0, 0);
-    // corner_layout->addStretch();
-    // corner_layout->addWidget(menu_score_label_);
-    // corner_layout->addStretch();
-    // corner_container->setLayout(corner_layout);
-
-    // menu_score_label_->setContentsMargins(0, 0, 10, 0);
-    // menu_bar->setCornerWidget(corner_container, Qt::TopRightCorner);
-    // setMenuBar(menu_bar);
-
     auto* button_translation = new QPushButton("Перевод");
     auto* button_grammar = new QPushButton("Грамматика");
     auto* button_mixed = new QPushButton("Микс");
@@ -94,16 +85,34 @@ MainWindow::MainWindow()
     button_mixed->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     button_mistakes->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
-    int max_width = std::max(
-                        {button_translation->sizeHint().width(), button_grammar->sizeHint().width(),
-                         button_mixed->sizeHint().width(), button_mistakes->sizeHint().width()}) +
-                    50;
+    button_translation->setStyleSheet(kLargeTextStyle);
+    button_grammar->setStyleSheet(kLargeTextStyle);
+    button_mixed->setStyleSheet(kLargeTextStyle);
+    button_mistakes->setStyleSheet(kLargeTextStyle);
+
+    button_translation->setProperty(kButtonTypeKey, TasksWidget::Translation);
+    button_grammar->setProperty(kButtonTypeKey, TasksWidget::Grammar);
+    button_mixed->setProperty(kButtonTypeKey, TasksWidget::Mixed);
+    button_mistakes->setProperty(kButtonTypeKey, TasksWidget::Mistakes);
+
+    const int max_width =
+        std::max(
+            {button_translation->sizeHint().width(), button_grammar->sizeHint().width(),
+             button_mixed->sizeHint().width(), button_mistakes->sizeHint().width()}) +
+        50;
 
     button_translation->setFixedWidth(max_width);
     button_grammar->setFixedWidth(max_width);
     button_mixed->setFixedWidth(max_width);
     button_mistakes->setFixedWidth(max_width);
 
+    connect(button_translation, &QPushButton::pressed, this, &MainWindow::StartExercise);
+    connect(button_grammar, &QPushButton::pressed, this, &MainWindow::StartExercise);
+    connect(button_mixed, &QPushButton::pressed, this, &MainWindow::StartExercise);
+    connect(button_mistakes, &QPushButton::pressed, this, &MainWindow::StartExercise);
+    connect(tasks_widget_, &TasksWidget::ExerciseFinished, this, [this] {
+        stacked_layout_->setCurrentIndex(Main);
+    });
     connect(&Settings::GetInstance(), &Settings::ScoreChanged, this, [this](int score) {
         QString str{("Рейтинг: " + std::to_string(score)).c_str()};
         score_label_->setText(str);
@@ -144,6 +153,15 @@ MainWindow::MainWindow()
 
     setMinimumSize(kDefaultWidth / 2, kDefaultHeight / 2);
     resize(kDefaultWidth, kDefaultHeight);
+}
+
+void MainWindow::StartExercise() {
+    if(tasks_widget_->InitExercise(static_cast<TasksWidget::TasksCategory>(
+        qobject_cast<QPushButton*>(sender())->property(kButtonTypeKey).toUInt()))) {
+            stacked_layout_->setCurrentIndex(Exercise);
+        } else {
+            QMessageBox::information(this, "", "Нету упражнений этого типа");
+        }
 }
 
 // NOLINTEND(cppcoreguidelines-owning-memory, *-unused-return-value)

@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+constexpr auto kDatabaseName = "labs/duolingo/data/database.db";
+
 constexpr auto kTasksTable = "tasks";
 constexpr auto kTranslationTasksTable = "translation_tasks";
 constexpr auto kGrammarTasksTable = "grammar_tasks";

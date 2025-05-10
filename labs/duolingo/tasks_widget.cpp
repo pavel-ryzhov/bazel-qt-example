@@ -108,6 +108,7 @@ bool TasksWidget::InitExercise(TasksCategory category) {
         return false;
     }
     InitTask();
+    timer_->start();
     return true;
 }
 

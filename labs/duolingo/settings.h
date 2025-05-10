@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QSettings>
 
-constexpr auto kSettingsName = "settings.ini";
+constexpr auto kSettingsName = "labs/duolingo/data/settings.ini";
 
 class Settings : public QObject {
     Q_OBJECT

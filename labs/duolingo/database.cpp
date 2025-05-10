@@ -8,8 +8,6 @@
 #include <memory>
 #include <vector>
 
-constexpr const char* kDatabaseName = "database.db";
-
 // NOLINTBEGIN(fuchsia-statically-constructed-objects, cert-err58-cpp)
 
 static const auto kColon = QStringLiteral(":");
