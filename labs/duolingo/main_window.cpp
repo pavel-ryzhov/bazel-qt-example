@@ -1,5 +1,6 @@
 #include "main_window.h"
 
+#include "difficulty_dialog.h"
 #include "settings.h"
 #include "tasks_widget.h"
 
@@ -36,12 +37,14 @@ constexpr auto kMainStyle = R"(
             border: none;
             padding: 8px;
         }
+        QPushButton {
+            font-size: 16pt;
+        }
     )";
 constexpr auto kLargeBoldTextStyle = R"(
     font-size: 16pt;
     font-weight: bold;
 )";
-constexpr auto kLargeTextStyle = "font-size: 16pt;";
 
 constexpr auto kButtonTypeKey = "type";
 
@@ -68,6 +71,7 @@ MainWindow::MainWindow()
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     spacer->setStyleSheet("background-color: #21252b;");
     difficulty_menu_ = menu_bar->addMenu("");
+    auto* difficulty_action = difficulty_menu_->addAction("Изменить");
     menu_layout->setContentsMargins(0, 0, 0, 0);
     menu_layout->setSpacing(0);
     menu_layout->addWidget(menu_bar);
@@ -85,11 +89,6 @@ MainWindow::MainWindow()
     button_mixed->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     button_mistakes->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
-    button_translation->setStyleSheet(kLargeTextStyle);
-    button_grammar->setStyleSheet(kLargeTextStyle);
-    button_mixed->setStyleSheet(kLargeTextStyle);
-    button_mistakes->setStyleSheet(kLargeTextStyle);
-
     button_translation->setProperty(kButtonTypeKey, TasksWidget::Translation);
     button_grammar->setProperty(kButtonTypeKey, TasksWidget::Grammar);
     button_mixed->setProperty(kButtonTypeKey, TasksWidget::Mixed);
@@ -106,12 +105,15 @@ MainWindow::MainWindow()
     button_mixed->setFixedWidth(max_width);
     button_mistakes->setFixedWidth(max_width);
 
-    connect(button_translation, &QPushButton::pressed, this, &MainWindow::StartExercise);
-    connect(button_grammar, &QPushButton::pressed, this, &MainWindow::StartExercise);
-    connect(button_mixed, &QPushButton::pressed, this, &MainWindow::StartExercise);
-    connect(button_mistakes, &QPushButton::pressed, this, &MainWindow::StartExercise);
+    connect(button_translation, &QPushButton::clicked, this, &MainWindow::StartExercise);
+    connect(button_grammar, &QPushButton::clicked, this, &MainWindow::StartExercise);
+    connect(button_mixed, &QPushButton::clicked, this, &MainWindow::StartExercise);
+    connect(button_mistakes, &QPushButton::clicked, this, &MainWindow::StartExercise);
     connect(tasks_widget_, &TasksWidget::ExerciseFinished, this, [this] {
         stacked_layout_->setCurrentIndex(Main);
+    });
+    connect(difficulty_action, &QAction::triggered, this, [this]{
+        DifficultyDialog{this}.exec();
     });
     connect(&Settings::GetInstance(), &Settings::ScoreChanged, this, [this](int score) {
         QString str{("Рейтинг: " + std::to_string(score)).c_str()};

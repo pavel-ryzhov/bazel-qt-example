@@ -9,8 +9,9 @@
 
 constexpr auto kExerciseTime = 180;
 constexpr auto kNTasks = 7;
-constexpr auto kMMistakes = 2;
-constexpr auto kAllMistakes = 3;
+constexpr auto kMTranslationMistakes = 3;
+constexpr auto kMGrammarMistakes = 2;
+constexpr auto kAllMistakes = 4;
 
 class Database;
 class Settings;
@@ -38,6 +39,7 @@ class TasksWidget : public QWidget {
 
    private slots:
     void UpdateTime();
+    void CheckTask();
 
    private:  // NOLINT(readability-redundant-access-specifiers)
     QTimer* timer_;
@@ -48,6 +50,8 @@ class TasksWidget : public QWidget {
     QLineEdit* line_edit_;
     QButtonGroup* button_group_;
     QLabel* result_label_;
+    QLabel* result_icon_;
+    QWidget* result_layout_container_;
     QVBoxLayout* grammar_layout_;
     QStackedLayout* stacked_layout_;
 
@@ -60,10 +64,10 @@ class TasksWidget : public QWidget {
     int time_ = kExerciseTime;
     int score_ = 0;
     int mistakes_in_current_task_ = 0;
-    bool mistake_in_current_task_ = false;
 
     [[nodiscard]] bool HasTask() const;
     void InitTask();
     void ReplaceRadioButtons(const QStringList& options) const;
-    void MistakeMade();
+    void FinishExercise(const QString& title, const QString& message);
+    void SetResult(bool value) const;
 };

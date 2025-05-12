@@ -16,6 +16,7 @@ qt_cc_library(
         "database.cpp",
         "settings.cpp",
         "tasks_widget.cpp",
+        "difficulty_dialog.cpp",
     ],
     hdrs = [
         "main_window.h",
@@ -23,6 +24,7 @@ qt_cc_library(
         "database.h",
         "settings.h",
         "tasks_widget.h",
+        "difficulty_dialog.h",
     ],
     deps = [
         "@rules_qt//:qt_core",
