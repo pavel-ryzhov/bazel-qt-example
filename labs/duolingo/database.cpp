@@ -11,9 +11,17 @@
 // NOLINTBEGIN(fuchsia-statically-constructed-objects, cert-err58-cpp)
 
 static const auto kColon = QStringLiteral(":");
-static const QString kInsert3ArgTaskQueryTemplate = QStringLiteral(R"(
+static const QString kInsert2ArgQueryTemplate = QStringLiteral(R"(
+    INSERT INTO %1 (%2, %3)
+    VALUES (:%2, :%3)
+)");
+static const QString kInsert3ArgQueryTemplate = QStringLiteral(R"(
     INSERT INTO %1 (%2, %3, %4)
     VALUES (:%2, :%3, :%4)
+)");
+static const QString kInsert5ArgQueryTemplate = QStringLiteral(R"(
+    INSERT INTO %1 (%2, %3, %4, %5, %6)
+    VALUES (:%2, :%3, :%4, :%5, :%6)
 )");
 static const QString kSelectByIdQueryTemplate = QStringLiteral(R"(
     SELECT * FROM %1
@@ -33,41 +41,37 @@ static const QString kCreateTasksTableQuery =
         %2 INTEGER PRIMARY KEY AUTOINCREMENT,
         %3 INTEGER,
         %4 INTEGER,
-        %5 INTEGER
+        %5 INTEGER,
+        %6 TEXT NOT NULL,
+        %7 TEXT
     )
 )")
-        .arg(kTasksTable, kIdField, kTypeField, kDifficultyField, kCompletionField);
+        .arg(kTasksTable, kIdField, kTypeField, kDifficultyField, kCompletionField, kTaskField, kHintField);
 static const QString kCreateTranslationTasksTableQuery =
     QString(R"(
     CREATE TABLE IF NOT EXISTS %1 (
         %3 INTEGER PRIMARY KEY,
         %4 TEXT NOT NULL,
-        %5 TEXT NOT NULL,
         FOREIGN KEY (%3) REFERENCES %2(%3) ON DELETE CASCADE
     )
 )")
-        .arg(kTranslationTasksTable, kTasksTable, kIdField, kTaskField, kAnswerField);
+        .arg(kTranslationTasksTable, kTasksTable, kIdField, kAnswerField);
 static const QString kCreateGrammarTasksTableQuery =
     QString(R"(
     CREATE TABLE IF NOT EXISTS %1 (
         %3 INTEGER PRIMARY KEY,
         %4 TEXT NOT NULL,
-        %5 TEXT NOT NULL,
-        %6 INTEGER,
+        %5 INTEGER,
         FOREIGN KEY (%3) REFERENCES %2(%3) ON DELETE CASCADE
     )
 )")
-        .arg(kGrammarTasksTable, kTasksTable, kIdField, kTaskField, kOptionsField, kAnswerField);
+        .arg(kGrammarTasksTable, kTasksTable, kIdField, kOptionsField, kAnswerField);
 static const QString kInsertTaskQuery =
-    kInsert3ArgTaskQueryTemplate.arg(kTasksTable, kTypeField, kDifficultyField, kCompletionField);
+    kInsert5ArgQueryTemplate.arg(kTasksTable, kTypeField, kDifficultyField, kCompletionField, kTaskField, kHintField);
 static const QString kInsertTranslationTaskQuery =
-    kInsert3ArgTaskQueryTemplate.arg(kTranslationTasksTable, kIdField, kTaskField, kAnswerField);
+    kInsert2ArgQueryTemplate.arg(kTranslationTasksTable, kIdField, kAnswerField);
 static const QString kInsertGrammarTaskQuery =
-    QString(R"(
-    INSERT INTO %1 (%2, %3, %4, %5)
-    VALUES (:%2, :%3, :%4, :%5)
-)")
-        .arg(kGrammarTasksTable, kIdField, kTaskField, kOptionsField, kAnswerField);
+    kInsert3ArgQueryTemplate.arg(kGrammarTasksTable, kIdField, kOptionsField, kAnswerField);
 static const QString kSelectRandomTasksByDifficultyAndCompletionQuery =
     QString(R"(
     SELECT * FROM %1
@@ -101,6 +105,12 @@ static const QString kUpdateTaskCompletionQuery =
     WHERE %3 = :%3
 )")
         .arg(kTasksTable, kCompletionField, kIdField);
+static const QString kUpdateAllTasksToNotDoneQuery =
+        QString(R"(
+        UPDATE %1
+        SET %2 = 2
+    )")
+    .arg(kTasksTable, kCompletionField);
 
 Database::Database() : database_(QSqlDatabase::addDatabase("QSQLITE")) {
     database_.setDatabaseName(kDatabaseName);
@@ -234,6 +244,14 @@ void Database::UpdateTaskCompletion(int id, Task::Completion completion) const {
     query.bindValue(kColon + kIdField, id);
     if (!query.exec()) {
         qDebug() << "Failed to update completion!" << query.lastError().text();
+    }
+}
+
+void Database::ResetToNotDone() const {
+    QSqlQuery query(database_);
+    query.prepare(kUpdateAllTasksToNotDoneQuery);
+    if (!query.exec()) {
+        qDebug() << "Failed to set NotDone for tasks!" << query.lastError().text();
     }
 }
 

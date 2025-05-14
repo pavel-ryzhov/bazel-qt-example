@@ -4,6 +4,7 @@
 #include <QString>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <utility>
 
@@ -20,15 +21,42 @@ class Task {
     enum Completion : uint8_t { Done, WithMistake, NotDone };
 
     Task() = default;
-    Task(int id, Difficulty difficulty, Completion completion);
 
-    Task(int id, uint8_t difficulty, uint8_t completion)
-        : Task(id, static_cast<Difficulty>(difficulty), static_cast<Completion>(completion)) {
+    Task(
+        int id, Difficulty difficulty, Completion completion, QString task,
+        std::optional<QString> hint = {})
+        : id_(id)
+        , difficulty_(difficulty)
+        , completion_(completion)
+        , task_(std::move(task))
+        , hint_(std::move(hint)) {
     }
 
-    Task(Difficulty difficulty, Completion completion) : Task(-1, difficulty, completion) {}
+    Task(
+        int id, uint8_t difficulty, uint8_t completion, QString task,
+        std::optional<QString> hint = {})
+        : id_(id)
+        , difficulty_(static_cast<Difficulty>(difficulty))
+        , completion_(static_cast<Completion>(completion))
+        , task_(std::move(task))
+        , hint_(std::move(hint)) {
+    }
 
-    Task(uint8_t difficulty, uint8_t completion) : Task(-1, difficulty, completion) {}
+    Task(
+        Difficulty difficulty, Completion completion, QString task,
+        std::optional<QString> hint = {})
+        : difficulty_(difficulty)
+        , completion_(completion)
+        , task_(std::move(task))
+        , hint_(std::move(hint)) {
+    }
+
+    Task(uint8_t difficulty, uint8_t completion, QString task, std::optional<QString> hint = {})
+        : difficulty_(static_cast<Difficulty>(difficulty))
+        , completion_(static_cast<Completion>(completion))
+        , task_(std::move(task))
+        , hint_(std::move(hint)) {
+    }
 
     [[nodiscard]] int GetId() const {
         return id_;
@@ -38,8 +66,20 @@ class Task {
         return difficulty_;
     }
 
+    [[nodiscard]] const QString& GetTask() const {
+        return task_;
+    }
+
     [[nodiscard]] Completion GetCompletion() const {
         return completion_;
+    }
+
+    [[nodiscard]] const QString& GetHint() const {
+        return *hint_;
+    }
+
+    [[nodiscard]] bool HasHint() const {
+        return hint_.has_value();
     }
 
     [[nodiscard]] virtual Type GetType() const = 0;
@@ -59,9 +99,12 @@ class Task {
 
     static QString GetDifficultyText(Difficulty difficulty) {
         switch (difficulty) {
-            case Low: return "Низкая";
-            case Medium: return "Средняя";
-            case High: return "Высокая";
+            case Low:
+                return "Low";
+            case Medium:
+                return "Medium";
+            case High:
+                return "High";
         }
         return "";
     }
@@ -73,6 +116,8 @@ class Task {
     int id_ = -1;
     Difficulty difficulty_ = Low;
     Completion completion_ = NotDone;
+    QString task_;
+    std::optional<QString> hint_;
 };
 
 using TaskResult = std::pair<bool, int>;
@@ -81,14 +126,17 @@ class TranslationTask : public Task {
    public:
     TranslationTask() = default;
     TranslationTask(
-        int id, Difficulty difficulty, Completion completion, QString task, QString answer);
-    TranslationTask(int id, uint8_t difficulty, uint8_t completion, QString task, QString answer);
-    TranslationTask(Difficulty difficulty, Completion completion, QString task, QString answer);
-    TranslationTask(uint8_t difficulty, uint8_t completion, QString task, QString answer);
-
-    [[nodiscard]] const QString& GetTask() const {
-        return task_;
-    }
+        int id, Difficulty difficulty, Completion completion, const QString& task, QString answer,
+        const std::optional<QString>& hint = {});
+    TranslationTask(
+        int id, uint8_t difficulty, uint8_t completion, const QString& task, QString answer,
+        const std::optional<QString>& hint = {});
+    TranslationTask(
+        Difficulty difficulty, Completion completion, const QString& task, QString answer,
+        const std::optional<QString>& hint = {});
+    TranslationTask(
+        uint8_t difficulty, uint8_t completion, const QString& task, QString answer,
+        const std::optional<QString>& hint = {});
 
     [[nodiscard]] const QString& GetAnswer() const {
         return answer_;
@@ -103,32 +151,26 @@ class TranslationTask : public Task {
     [[nodiscard]] TaskResult GetScore(const QString& actual_answer) const;
 
    private:
-    QString task_;
     QString answer_;
 
     void ReadQuery(const QSqlQuery& query) override;
-
-    [[nodiscard]] double GradeAnswer(const QString& actual_answer) const;
 };
 
 class GrammarTask : public Task {
    public:
     GrammarTask() = default;
     GrammarTask(
-        int id, Difficulty difficulty, Completion completion, QString task, QStringList options,
-        int answer);
+        int id, Difficulty difficulty, Completion completion, const QString& task,
+        QStringList options, int answer, const std::optional<QString>& hint = {});
     GrammarTask(
-        int id, uint8_t difficulty, uint8_t completion, QString task, QStringList options,
-        int answer);
+        int id, uint8_t difficulty, uint8_t completion, const QString& task, QStringList options,
+        int answer, const std::optional<QString>& hint = {});
     GrammarTask(
-        Difficulty difficulty, Completion completion, QString task, QStringList options,
-        int answer);
+        Difficulty difficulty, Completion completion, const QString& task, QStringList options,
+        int answer, const std::optional<QString>& hint = {});
     GrammarTask(
-        uint8_t difficulty, uint8_t completion, QString task, QStringList options, int answer);
-
-    [[nodiscard]] const QString& GetTask() const {
-        return task_;
-    }
+        uint8_t difficulty, uint8_t completion, const QString& task, QStringList options,
+        int answer, const std::optional<QString>& hint = {});
 
     [[nodiscard]] int GetAnswer() const {
         return answer_;
@@ -147,7 +189,6 @@ class GrammarTask : public Task {
     [[nodiscard]] TaskResult GetScore(int actual_answer) const;
 
    private:
-    QString task_;
     QStringList options_;
     int answer_ = -1;
 

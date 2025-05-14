@@ -16,7 +16,7 @@ DifficultyDialog::DifficultyDialog(QWidget* parent)
     auto* button_medium = new QRadioButton(Task::GetDifficultyText(Task::Medium));
     auto* button_high = new QRadioButton(Task::GetDifficultyText(Task::High));
 
-    auto* button_submit = new QPushButton("Подтвердить");
+    auto* button_submit = new QPushButton("Submit");
 
     button_low->setStyleSheet(kLargeTextStyle);
     button_medium->setStyleSheet(kLargeTextStyle);
@@ -49,7 +49,7 @@ DifficultyDialog::DifficultyDialog(QWidget* parent)
     v_layout->addWidget(button_submit, 0, Qt::AlignHCenter);
 
     setLayout(v_layout);
-    setWindowTitle("Изменить сложность");
+    setWindowTitle("Change difficulty");
     resize(300, 200);
 }
 

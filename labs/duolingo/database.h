@@ -21,6 +21,7 @@ constexpr auto kCompletionField = "completion";
 constexpr auto kTaskField = "task";
 constexpr auto kAnswerField = "answer";
 constexpr auto kOptionsField = "options";
+constexpr auto kHintField = "hint";
 
 class Database {
    public:
@@ -40,6 +41,7 @@ class Database {
     void UpdateTaskCompletion(int id, Task::Completion completion) const;
     [[nodiscard]] std::vector<std::unique_ptr<Task>> SelectRandomTasksByCompletion(
         Task::Completion completion = Task::Completion::NotDone, int limit = 1) const;
+    void ResetToNotDone() const;
 
     Database(const Database&) = delete;
     Database(Database&&) = delete;

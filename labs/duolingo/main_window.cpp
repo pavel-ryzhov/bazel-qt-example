@@ -1,10 +1,12 @@
 #include "main_window.h"
 
 #include "difficulty_dialog.h"
+#include "database.h"
 #include "settings.h"
 #include "tasks_widget.h"
 
 #include <QtWidgets>
+#include <functional>
 
 constexpr auto kMainStyle = R"(
         QWidget {
@@ -37,14 +39,12 @@ constexpr auto kMainStyle = R"(
             border: none;
             padding: 8px;
         }
-        QPushButton {
-            font-size: 16pt;
-        }
     )";
 constexpr auto kLargeBoldTextStyle = R"(
     font-size: 16pt;
     font-weight: bold;
 )";
+constexpr auto kLargeTextStyle = "font-size: 16pt;";
 
 constexpr auto kButtonTypeKey = "type";
 
@@ -71,7 +71,7 @@ MainWindow::MainWindow()
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     spacer->setStyleSheet("background-color: #21252b;");
     difficulty_menu_ = menu_bar->addMenu("");
-    auto* difficulty_action = difficulty_menu_->addAction("Изменить");
+    auto* difficulty_action = difficulty_menu_->addAction("Change");
     menu_layout->setContentsMargins(0, 0, 0, 0);
     menu_layout->setSpacing(0);
     menu_layout->addWidget(menu_bar);
@@ -79,10 +79,17 @@ MainWindow::MainWindow()
     menu_layout->addWidget(menu_score_label_);
     setMenuWidget(menu_container);
 
-    auto* button_translation = new QPushButton("Перевод");
-    auto* button_grammar = new QPushButton("Грамматика");
-    auto* button_mixed = new QPushButton("Микс");
-    auto* button_mistakes = new QPushButton("Ошибки");
+    auto* button_translation = new QPushButton("Translation");
+    auto* button_grammar = new QPushButton("Grammar");
+    auto* button_mixed = new QPushButton("Mixed");
+    auto* button_mistakes = new QPushButton("Mistakes");
+
+    auto* reset_database_shortcut = new QShortcut(QKeySequence("Ctrl+R"), this);
+
+    button_translation->setStyleSheet(kLargeTextStyle);
+    button_grammar->setStyleSheet(kLargeTextStyle);
+    button_mixed->setStyleSheet(kLargeTextStyle);
+    button_mistakes->setStyleSheet(kLargeTextStyle);
 
     button_translation->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     button_grammar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
@@ -112,18 +119,19 @@ MainWindow::MainWindow()
     connect(tasks_widget_, &TasksWidget::ExerciseFinished, this, [this] {
         stacked_layout_->setCurrentIndex(Main);
     });
+    connect(reset_database_shortcut, &QShortcut::activated, this, std::bind_front(&Database::ResetToNotDone, &Database::GetInstance()));
     connect(difficulty_action, &QAction::triggered, this, [this]{
         DifficultyDialog{this}.exec();
     });
     connect(&Settings::GetInstance(), &Settings::ScoreChanged, this, [this](int score) {
-        QString str{("Рейтинг: " + std::to_string(score)).c_str()};
+        QString str{("Score: " + std::to_string(score)).c_str()};
         score_label_->setText(str);
         menu_score_label_->setText(str);
     });
     connect(
         &Settings::GetInstance(), &Settings::DifficultyChanged, this,
         [this](Task::Difficulty difficulty) {
-            const auto str = "Сложность: " + Task::GetDifficultyText(difficulty);
+            const auto str = "Difficulty: " + Task::GetDifficultyText(difficulty);
             difficulty_menu_->setTitle(str);
             difficulty_label_->setText(str);
         });
@@ -162,7 +170,7 @@ void MainWindow::StartExercise() {
         qobject_cast<QPushButton*>(sender())->property(kButtonTypeKey).toUInt()))) {
             stacked_layout_->setCurrentIndex(Exercise);
         } else {
-            QMessageBox::information(this, "", "Нету упражнений этого типа");
+            QMessageBox::information(this, "", "There are no exercises of this type");
         }
 }
 

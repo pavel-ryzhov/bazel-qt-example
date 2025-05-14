@@ -1,6 +1,7 @@
 #pragma once
 
 #include "entities.h"
+#include "audio_player.h"
 
 #include <QWidget>
 #include <cstdint>
@@ -11,10 +12,11 @@ constexpr auto kExerciseTime = 180;
 constexpr auto kNTasks = 7;
 constexpr auto kMTranslationMistakes = 3;
 constexpr auto kMGrammarMistakes = 2;
-constexpr auto kAllMistakes = 4;
+constexpr auto kAllMistakes = 3;
 
 class Database;
 class Settings;
+class AudioPlayer;
 
 QT_BEGIN_NAMESPACE
 class QTimer;
@@ -23,6 +25,7 @@ class QLineEdit;
 class QButtonGroup;
 class QVBoxLayout;
 class QStackedLayout;
+class QProgressBar;
 QT_END_NAMESPACE
 
 class TasksWidget : public QWidget {
@@ -40,8 +43,12 @@ class TasksWidget : public QWidget {
    private slots:
     void UpdateTime();
     void CheckTask();
+    void DisplayHint();
 
-   private:  // NOLINT(readability-redundant-access-specifiers)
+   protected:
+    void keyPressEvent(QKeyEvent* event) override;
+
+   private:
     QTimer* timer_;
     QLabel* time_label_;
     QLabel* mistakes_label_;
@@ -51,23 +58,26 @@ class TasksWidget : public QWidget {
     QButtonGroup* button_group_;
     QLabel* result_label_;
     QLabel* result_icon_;
-    QWidget* result_layout_container_;
     QVBoxLayout* grammar_layout_;
     QStackedLayout* stacked_layout_;
+    QProgressBar* progress_bar_;
 
     TasksCategory category_ = Translation;
     Database& database_;
     Settings& settings_;
+    AudioPlayer& audio_player_;
     std::vector<std::unique_ptr<Task>> tasks_;
     std::vector<std::unique_ptr<Task>>::const_iterator current_task_;
     int mistakes_ = 0;
     int time_ = kExerciseTime;
     int score_ = 0;
     int mistakes_in_current_task_ = 0;
+    bool block_submit_ = false;
 
     [[nodiscard]] bool HasTask() const;
     void InitTask();
-    void ReplaceRadioButtons(const QStringList& options) const;
+    void RemoveRadioButtons() const;
+    void AddRadioButtons(const QStringList& options) const;
     void FinishExercise(const QString& title, const QString& message);
-    void SetResult(bool value) const;
+    void SetResult(bool value);
 };

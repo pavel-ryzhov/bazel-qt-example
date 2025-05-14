@@ -1,5 +1,6 @@
 #include "tasks_widget.h"
 
+#include "audio_player.h"
 #include "database.h"
 #include "entities.h"
 #include "settings.h"
@@ -18,7 +19,17 @@ constexpr auto kMainStyle = R"(
         font-size: 16pt;
         font-weight: bold;
     }
+    QProgressBar {
+        border: none;
+        background-color: #1e2127;
+        border-radius: 3px;
+    }
+    QProgressBar::chunk {
+        background-color: #3daee9;
+        border-radius: 3px;
+    }
 )";
+constexpr auto kLargeTextStyle = "font-size: 16pt;";
 
 // NOLINTBEGIN(cppcoreguidelines-owning-memory, *-unused-return-value)
 
@@ -33,26 +44,36 @@ TasksWidget::TasksWidget(QWidget* parent)
     , button_group_(new QButtonGroup())
     , result_label_(new QLabel())
     , result_icon_(new QLabel())
-    , result_layout_container_(new QWidget())
     , grammar_layout_(new QVBoxLayout())
     , stacked_layout_(new QStackedLayout())
+    , progress_bar_(new QProgressBar())
     , database_(Database::GetInstance())
-    , settings_(Settings::GetInstance()) {
+    , settings_(Settings::GetInstance())
+    , audio_player_(AudioPlayer::GetInstance()) {
     timer_->setInterval(1000);
+
+    progress_bar_->setFixedHeight(6);
+    progress_bar_->setTextVisible(false);
 
     setStyleSheet(kMainStyle);
     result_label_->setStyleSheet("font-size: 11pt;");
+    task_label_->setStyleSheet("font-size: 11pt;");
+
+    auto* hint_shortcut = new QShortcut(QKeySequence("H"), this);
 
     auto* v_layout = new QVBoxLayout();
     auto* h_layout = new QHBoxLayout();
     auto* h_layout_buttons = new QHBoxLayout();
     auto* v_layout_translation = new QVBoxLayout();
 
-    auto* submit_button = new QPushButton("Ответить");
-    auto* finish_button = new QPushButton("Закончить");
+    auto* submit_button = new QPushButton("Submit");
+    auto* finish_button = new QPushButton("Finish");
 
     submit_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     finish_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+
+    submit_button->setStyleSheet(kLargeTextStyle);
+    finish_button->setStyleSheet(kLargeTextStyle);
 
     const int max_width =
         std::max(submit_button->sizeHint().width(), finish_button->sizeHint().width()) + 50;
@@ -66,22 +87,28 @@ TasksWidget::TasksWidget(QWidget* parent)
         timer_->stop();
         emit ExerciseFinished();
     });
+    connect(hint_shortcut, &QShortcut::activated, this, &TasksWidget::DisplayHint);
 
+    result_label_->setText("");
+
+    auto* result_layout_container = new QWidget();
     auto* result_layout = new QHBoxLayout();
     result_layout->addWidget(result_icon_);
     result_layout->addWidget(result_label_);
     result_layout->addStretch();
-    result_layout_container_->setLayout(result_layout);
+    result_layout_container->setLayout(result_layout);
 
-    h_layout->addWidget(new QLabel("Ошибки: "));
+    h_layout->addWidget(new QLabel("Mistakes: "));
     h_layout->addWidget(mistakes_label_);
     h_layout->addStretch();
-    h_layout->addWidget(new QLabel("Оставшееся время: "));
+    h_layout->addWidget(new QLabel("Remaining time: "));
     h_layout->addWidget(time_label_);
 
     v_layout->addItem(h_layout);
-    v_layout->addWidget(title_label_, 0, Qt::AlignHCenter);
+    v_layout->addWidget(progress_bar_);
     v_layout->addStretch();
+    v_layout->addWidget(title_label_, 0, Qt::AlignHCenter);
+
     v_layout->addWidget(task_label_, 0, Qt::AlignHCenter);
 
     v_layout_translation->addWidget(line_edit_, 0, Qt::AlignTop);
@@ -97,15 +124,13 @@ TasksWidget::TasksWidget(QWidget* parent)
     auto* v1_layout = new QVBoxLayout();
     auto* h1_layout = new QHBoxLayout();
     v1_layout->addItem(stacked_layout_);
-    v1_layout->addWidget(result_layout_container_);
+    v1_layout->addWidget(result_layout_container);
 
     h1_layout->addStretch();
     h1_layout->addItem(v1_layout);
     h1_layout->addStretch();
     v_layout->addItem(h1_layout);
 
-    v_layout->addWidget(result_layout_container_, 0, Qt::AlignTop);
-    
     v_layout->addStretch();
     v_layout->addStretch();
 
@@ -122,6 +147,7 @@ TasksWidget::TasksWidget(QWidget* parent)
 
 bool TasksWidget::InitExercise(TasksCategory category) {
     const auto difficulty = settings_.GetDifficulty();
+    progress_bar_->setValue(0);
     category_ = category;
     mistakes_ = 0;
     score_ = 0;
@@ -149,32 +175,37 @@ bool TasksWidget::InitExercise(TasksCategory category) {
             break;
         }
     }
+    progress_bar_->setRange(0, static_cast<int>(tasks_.size()));
     current_task_ = tasks_.cbegin();
     if (!HasTask()) {
         return false;
     }
     InitTask();
+    audio_player_.PlaySound(AudioPlayer::Start);
     timer_->start();
     return true;
 }
 
 void TasksWidget::InitTask() {
+    block_submit_ = false;
     mistakes_in_current_task_ = 0;
-    result_layout_container_->setVisible(false);
+    result_label_->setText("");
+    result_icon_->setPixmap(QPixmap());
+    RemoveRadioButtons();
     int type = (**current_task_).GetType();
     switch (type) {
         case Task::Translation: {
-            title_label_->setText("Переведите текст");
+            title_label_->setText("Translate the text into English");
             const auto& task = dynamic_cast<const TranslationTask&>(**current_task_);
             task_label_->setText(task.GetTask());
             line_edit_->setText("");
             break;
         }
         case Task::Grammar: {
-            title_label_->setText("Выберите верный вариант");
+            title_label_->setText("Choose the correct option");
             const auto& task = dynamic_cast<const GrammarTask&>(**current_task_);
             task_label_->setText(task.GetTask());
-            ReplaceRadioButtons(task.GetOptions());
+            AddRadioButtons(task.GetOptions());
             break;
         }
         default: {
@@ -189,7 +220,8 @@ void TasksWidget::UpdateTime() {
                              .arg(time_ / 60, 2, 10, QLatin1Char('0'))
                              .arg(time_ % 60, 2, 10, QLatin1Char('0')));
     if (time_ == 0) {
-        FinishExercise("Упражнение не пройдено", "Время истекло!");
+        audio_player_.PlaySound(AudioPlayer::Error);
+        FinishExercise("Exercise failed!", "Time's up!");
     }
 }
 
@@ -197,12 +229,15 @@ bool TasksWidget::HasTask() const {
     return current_task_ != tasks_.cend();
 }
 
-void TasksWidget::ReplaceRadioButtons(const QStringList& options) const {
+void TasksWidget::RemoveRadioButtons() const {
     for (auto* button : button_group_->buttons()) {
         button_group_->removeButton(button);
         grammar_layout_->removeWidget(button);
         button->deleteLater();
     }
+}
+
+void TasksWidget::AddRadioButtons(const QStringList& options) const {
     auto it = options.begin();
     for (int i = 0; i < options.size(); ++i, ++it) {
         auto* button = new QRadioButton(*it);
@@ -213,6 +248,9 @@ void TasksWidget::ReplaceRadioButtons(const QStringList& options) const {
 }
 
 void TasksWidget::CheckTask() {
+    if (block_submit_) {
+        return;
+    }
     TaskResult result;
     int k_mistakes = -1;
     switch ((**current_task_).GetType()) {
@@ -245,7 +283,7 @@ void TasksWidget::CheckTask() {
         }
     }
     if (finish) {
-        FinishExercise("Упражнение не пройдено", "Превышен лимит ошибок!");
+        FinishExercise("Exercise failed", "The mistake limit has been exceeded!");
     } else {
         if (mistakes_in_current_task_ == 0) {
             database_.UpdateTaskCompletion((**current_task_).GetId(), Task::Done);
@@ -253,13 +291,16 @@ void TasksWidget::CheckTask() {
         ++current_task_;
         score_ += result.second;
         if (HasTask()) {
-            InitTask();
+            block_submit_ = true;
+            QTimer::singleShot(1000, this, [this] { InitTask(); });
         } else {
-            if (mistakes_in_current_task_ == 0) {
+            if (mistakes_ == 0) {
                 settings_.AddScore(score_);
-                FinishExercise("Отлично! Упражнение пройдено!", ("Рейтинг: +" + std::to_string(score_)).c_str());
+                FinishExercise(
+                    "Great! The exercise is completed!",
+                    ("Score: +" + std::to_string(score_)).c_str());
             } else {
-                FinishExercise("Упражнение пройдено", "Вам есть над чем поработать");
+                FinishExercise("The exercise is completed", "You have a lot to work on");
             }
         }
     }
@@ -271,10 +312,36 @@ void TasksWidget::FinishExercise(const QString& title, const QString& message) {
     emit ExerciseFinished();
 }
 
-void TasksWidget::SetResult(bool value) const {
-    result_icon_->setPixmap(QApplication::style()->standardPixmap(value ? QStyle::SP_DialogApplyButton : QStyle::SP_DialogCancelButton));
-    result_label_->setText(value ? "Верно!" : "Ответ неверный!");
-    result_layout_container_->setVisible(true);
+void TasksWidget::SetResult(bool value) {
+    if (value) {
+        progress_bar_->setValue(progress_bar_->value() + 1);
+    }
+    result_label_->setText(value ? "Right!" : "The answer is incorrect!");
+    const auto height = result_label_->height();
+    result_icon_->setPixmap(
+        QApplication::style()
+            ->standardPixmap(value ? QStyle::SP_DialogApplyButton : QStyle::SP_DialogCancelButton)
+            .scaled(height, height, Qt::KeepAspectRatio));
+    audio_player_.PlaySound(value ? AudioPlayer::Success : AudioPlayer::Error);
+}
+
+void TasksWidget::DisplayHint() {
+    if ((**current_task_).HasHint()) {
+        QMessageBox::information(this, "Hint", (**current_task_).GetHint());
+    }
+}
+
+void TasksWidget::keyPressEvent(QKeyEvent* event) {
+    switch (event->key()) {
+        case Qt::Key_Alt: {
+            DisplayHint();
+            break;
+        }
+        case Qt::Key_Return: {
+            CheckTask();
+            break;
+        }
+    }
 }
 
 // NOLINTEND(cppcoreguidelines-owning-memory, *-unused-return-value)
