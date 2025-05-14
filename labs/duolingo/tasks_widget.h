@@ -12,7 +12,7 @@ constexpr auto kExerciseTime = 180;
 constexpr auto kNTasks = 7;
 constexpr auto kMTranslationMistakes = 3;
 constexpr auto kMGrammarMistakes = 2;
-constexpr auto kAllMistakes = 3;
+constexpr auto kAllMistakes = 4;
 
 class Database;
 class Settings;
